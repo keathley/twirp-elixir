@@ -16,9 +16,18 @@ defmodule Twirp.ServiceTest do
   defmodule TestService do
     use Twirp.Service
 
-    rpc :Foo, Req, Resp, to: :foo
+    package "test.service"
+    service "TestService"
+    rpc :Foo, Req, Resp, :foo
   end
 
-  test "" do
+  test "DSL adds definition/0 fn to service module" do
+    assert TestService.definition() == %{
+      package: "test.service",
+      service: "TestService",
+      rpcs: [
+        %{method: :Foo, input: Req, output: Resp, handler_fn: :foo}
+      ]
+    }
   end
 end

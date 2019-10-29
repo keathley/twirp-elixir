@@ -23,33 +23,34 @@ defmodule Twirp.Error do
   }
 
   @error_codes Map.keys(@error_code_to_http_status)
+  @error_code_strings for code <- @error_codes, do: Atom.to_string(code)
 
-  def valid_code?(code) do
-    Map.key?(@error_code_to_http_status, code)
+  @derive Jason.Encoder
+  defstruct ~w|code msg meta|a
+
+  for code <- @error_codes do
+    def unquote(code)(msg, meta \\ []) do
+      new(unquote(code), msg, meta)
+    end
   end
 
-  # Code constructors to ensure valid error codes. Example:
-  #     Twirp::Error.internal("boom")
-  #     Twirp::Error.invalid_argument("foo is mandatory", mymeta: "foobar")
-  #     Twirp::Error.permission_denied("Thou shall not pass!", target: "Balrog")
-  # ERROR_CODES.each do |code|
-  #   define_singleton_method code do |msg, meta=nil|
-  #     new(code, msg, meta)
-  #   end
-  # end
+  def valid_code?(code) when is_atom(code), do: code in @error_codes
+  def valid_code?(code) when is_binary(code), do: code in @error_code_strings
+
+  def code_to_status(code) when code in @error_codes do
+    @error_code_to_http_status[code]
+  end
 
   def s do
-    schema(%{
-      code: spec(is_binary()),
-      msg: spec(is_binary())
+    schema(%__MODULE__{
+      code: spec(is_atom() and (& &1 in @error_codes)),
+      msg: spec(is_binary()),
+      meta: map_of(spec(is_atom()), spec(is_binary())),
     })
   end
 
-  def new(code, msg, meta) do
-  end
-
-  def new(code, msg, nil) do
-    %{code: code, msg: msg}
+  def new(code, msg, meta \\ []) do
+    conform!(%__MODULE__{code: code, msg: msg, meta: Enum.into(meta, %{})}, s())
   end
 end
 
