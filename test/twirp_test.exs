@@ -2,7 +2,61 @@ defmodule TwirpTest do
   use ExUnit.Case
   doctest Twirp
 
-  test "greets the world" do
-    assert Twirp.hello() == :world
+  defmodule TestReq do
+    use Protobuf, syntax: :proto3
+
+    @derive Jason.Encoder
+    defstruct [:msg]
+
+    field :msg, 1, type: :string
+  end
+
+  defmodule TestResp do
+    use Protobuf, syntax: :proto3
+
+    @derive Jason.Encoder
+    defstruct [:msg]
+
+    field :msg, 1, type: :string
+  end
+
+  defmodule TestService do
+    use Twirp.Service
+
+    package "twirp.integration.test"
+    service "TestService"
+
+    rpc :Echo, TestReq, TestResp, :echo
+  end
+
+  defmodule TestClient do
+    use Twirp.Client, service: TestService
+  end
+
+  defmodule TestHandler do
+    def echo(_conn, %TestReq{msg: msg}) do
+      IO.inspect(msg, label: "Got message")
+
+      %TestResp{msg: msg}
+    end
+  end
+
+  defmodule TestRouter do
+    use Plug.Builder
+
+    plug TestService, handler: TestHandler
+  end
+
+  setup_all do
+    {:ok, _} = Plug.Cowboy.http TestRouter, [port: 4002]
+
+    :ok
+  end
+
+  test "clients can call services" do
+    req = TestReq.new(msg: "Hello there")
+    assert {:ok, %TestResp{}=resp} = TestClient.echo(TestReq.new(msg: "Hello there"))
+    assert resp.msg == "Hello there"
   end
 end
+

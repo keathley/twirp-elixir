@@ -25,6 +25,10 @@ defmodule Twirp.MixProject do
       {:tesla, "~> 1.3"},
       {:norm, "~> 0.8"},
       {:jason, "~> 1.1"},
+      {:protobuf, "~> 0.5"},
+      {:google_protos, "~>0.1"},
+
+      {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
     ]
   end
 end
