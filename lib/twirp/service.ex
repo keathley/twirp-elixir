@@ -97,6 +97,10 @@ defmodule Twirp.Service do
       def rpcs do
         for {_, rpc} <- @rpcs, do: rpc
       end
+
+      def package, do: @package
+
+      def service, do: @service
     end
   end
 end

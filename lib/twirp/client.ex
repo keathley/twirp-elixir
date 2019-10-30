@@ -18,37 +18,37 @@ defmodule Twirp.Client do
     service = Module.get_attribute(env.module, :service_definition)
     rpcs = service.rpcs()
 
+    service_path = Path.join(["twirp", service.package(), service.service()])
+
     fs_to_define =
       Enum.map(rpcs, fn rpc ->
         quote do
           def unquote(rpc.f)(client, %unquote(rpc.input){}=req) do
-            Tesla.post(client, req)
+            Twirp.Client.HTTP.make_rpc(
+              client,
+              unquote(service_path),
+              unquote(rpc.method),
+              unquote(rpc.output),
+              req
+            )
           end
         end
       end)
 
     quote do
-      def new(base_url) when is_binary(base_url) do
-        middleware = [
+      # TODO - This should also allow you to configure the adapter
+      # Maybe we should allow people to pass in the client or whatever as well.
+      def new(base_url, middleware) when is_binary(base_url) do
+        base_middleware = [
           {Tesla.Middleware.BaseUrl, base_url},
+          {Tesla.Middleware.Headers, [{"Content-Type", "application/proto"}]},
+          Tesla.Middleware.Logger,
         ]
 
-        Tesla.client(middleware)
-      end
-      def new(middleware) when is_list(middleware) do
-        Tesla.client(middleware)
-      end
-      def new(base_url, middleware) when is_binary(base_url) do
-        middleware = [{Tesla.Middleware.BaseUrl, base_url} | middleware]
-
-        Tesla.client(middleware)
+        Tesla.client(base_middleware ++ middleware, Tesla.Adapter.Hackney)
       end
 
       unquote(fs_to_define)
-
-      # def rpc(client, name, req) do
-      #   IO.puts "Making an rpc: #{name}, #{inspect req}"
-      # end
     end
   end
 end

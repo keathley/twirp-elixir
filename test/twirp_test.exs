@@ -35,27 +35,31 @@ defmodule TwirpTest do
 
   defmodule TestHandler do
     def echo(_conn, %TestReq{msg: msg}) do
-      IO.inspect(msg, label: "Got message")
-
       %TestResp{msg: msg}
     end
   end
 
   defmodule TestRouter do
-    use Plug.Builder
+    use Plug.Router
 
+    plug Plug.Logger, log: :debug
     plug TestService, handler: TestHandler
+
+    plug :match
+
+    match _ do
+      send_resp(conn, 404, "oops")
+    end
   end
 
   setup_all do
-    {:ok, _} = Plug.Cowboy.http TestRouter, [port: 4002]
+    {:ok, _} = Plug.Cowboy.http TestRouter, [], [port: 4002]
 
     :ok
   end
 
   test "clients can call services" do
-    IO.inspect(TestClient.__info__(:functions), label: "Functions")
-    client = TestClient.new("http://localhost:4002")
+    client = TestClient.new("http://localhost:4002", [])
     req = TestReq.new(msg: "Hello there")
 
     assert {:ok, %TestResp{}=resp} = TestClient.echo(client, req)

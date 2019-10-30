@@ -27,6 +27,7 @@ defmodule Twirp.MixProject do
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},
+      {:hackney, "~> 1.15"},
 
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
     ]
