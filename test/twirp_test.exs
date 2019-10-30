@@ -54,8 +54,11 @@ defmodule TwirpTest do
   end
 
   test "clients can call services" do
+    IO.inspect(TestClient.__info__(:functions), label: "Functions")
+    client = TestClient.new("http://localhost:4002")
     req = TestReq.new(msg: "Hello there")
-    assert {:ok, %TestResp{}=resp} = TestClient.echo(TestReq.new(msg: "Hello there"))
+
+    assert {:ok, %TestResp{}=resp} = TestClient.echo(client, req)
     assert resp.msg == "Hello there"
   end
 end

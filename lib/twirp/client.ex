@@ -20,19 +20,35 @@ defmodule Twirp.Client do
 
     fs_to_define =
       Enum.map(rpcs, fn rpc ->
-        quote bind_quoted: [name: rpc.f] do
-          def name(%unquote(rpc.input){}=req) do
-            Tesla.Client.HTTP.post(
+        quote do
+          def unquote(rpc.f)(client, %unquote(rpc.input){}=req) do
+            Tesla.post(client, req)
           end
         end
       end)
 
     quote do
+      def new(base_url) when is_binary(base_url) do
+        middleware = [
+          {Tesla.Middleware.BaseUrl, base_url},
+        ]
+
+        Tesla.client(middleware)
+      end
+      def new(middleware) when is_list(middleware) do
+        Tesla.client(middleware)
+      end
+      def new(base_url, middleware) when is_binary(base_url) do
+        middleware = [{Tesla.Middleware.BaseUrl, base_url} | middleware]
+
+        Tesla.client(middleware)
+      end
+
       unquote(fs_to_define)
 
-      def rpc(name, req) do
-        IO.puts "Making an rpc: #{name}, #{inspect req}"
-      end
+      # def rpc(client, name, req) do
+      #   IO.puts "Making an rpc: #{name}, #{inspect req}"
+      # end
     end
   end
 end
