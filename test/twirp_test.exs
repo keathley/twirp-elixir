@@ -37,5 +37,14 @@ defmodule TwirpTest do
     assert {:ok, %Resp{}=resp} = Client.echo(client, req)
     assert resp.msg == "Hello there"
   end
+
+  test "users can specify deadlines" do
+    client = Client.client("http://localhost:4002", [])
+    req = Req.new(msg: "Hello there")
+
+    assert {:error, resp} = Client.slow_echo(client, req, timeout: 5)
+    assert resp.code == :deadline_exceeded
+    assert resp.meta.timeout == "5"
+  end
 end
 
