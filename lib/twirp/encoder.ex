@@ -8,6 +8,8 @@ defmodule Twirp.Encoder do
   def valid_type?(type) when type in @valid_types, do: true
   def valid_type?(_), do: false
 
+  def json_type, do: @json
+
   def proto?(content_type), do: content_type == @proto
 
   def decode(bytes, input, @json <> _) do
@@ -21,6 +23,10 @@ defmodule Twirp.Encoder do
     payload = input.decode(bytes)
 
     {:ok, payload}
+  end
+
+  def decode_json(bytes) do
+    Jason.decode(bytes)
   end
 
   def encode(payload, _output, @json <> _) do

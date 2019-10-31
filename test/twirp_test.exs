@@ -21,12 +21,15 @@ defmodule TwirpTest do
   end
 
   defmodule TestService do
-    use Twirp.Service
-
-    package "twirp.integration.test"
-    service "TestService"
-
-    rpc :Echo, TestReq, TestResp, :echo
+    def definition do
+      %{
+        package: "twirp.integration.test",
+        service: "TestService",
+        rpcs: [
+          %{method: :Echo, input: TestReq, output: TestResp, handler_fn: :echo}
+        ]
+      }
+    end
   end
 
   defmodule TestClient do
@@ -43,7 +46,7 @@ defmodule TwirpTest do
     use Plug.Router
 
     plug Plug.Logger, log: :debug
-    plug TestService, handler: TestHandler
+    plug Twirp.Plug, service: TestService, handler: TestHandler
 
     plug :match
 
@@ -59,7 +62,8 @@ defmodule TwirpTest do
   end
 
   test "clients can call services" do
-    client = TestClient.new("http://localhost:4002", [])
+    client = TestClient.client("http://localhost:4002", [])
+
     req = TestReq.new(msg: "Hello there")
 
     assert {:ok, %TestResp{}=resp} = TestClient.echo(client, req)
