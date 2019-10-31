@@ -1,4 +1,6 @@
 defmodule Twirp.Service do
+  import Norm
+
   defmacro __using__(_opts) do
     quote do
       import Twirp.Service
@@ -9,13 +11,34 @@ defmodule Twirp.Service do
     end
   end
 
-  # defmacro package(str) do
+  def s do
+    schema(%{
+      package: spec(is_binary()),
+      service: spec(is_binary()),
+      rpcs: coll_of(rpc_s())
+    })
+  end
 
-  # end
+  def rpc_s do
+    schema(%{
+      method: spec(is_atom()),
+      input: spec(is_atom()),
+      output: spec(is_atom()),
+      handler_fn: spec(is_atom()),
+    })
+  end
 
-  # defmacro service(str) do
+  defmacro package(str) do
+    quote do
+      @package unquote(str)
+    end
+  end
 
-  # end
+  defmacro service(str) do
+    quote do
+      @service unquote(str)
+    end
+  end
 
   defmacro rpc(method, input, output, f) do
     quote do
@@ -23,7 +46,7 @@ defmodule Twirp.Service do
         method: unquote(method),
         input: unquote(input),
         output: unquote(output),
-        f: unquote(f)
+        handler_fn: unquote(f)
       }
 
       @rpcs [rpc | @rpcs]
@@ -34,69 +57,8 @@ defmodule Twirp.Service do
   @doc false
   defmacro __before_compile__(_env) do
     quote do
-      import Plug.Conn
-
-      @json "application/json"
-      @proto "application/proto"
-      @valid_content_types [@json, @proto]
-
-      def init(options) do
-        options
-        |> IO.inspect(label: "Plug init")
-      end
-
-      def call(conn, options) do
-        # TODO - Pull package and service from the service definition.
-        with ["twirp", package, service, method] <- conn.path_info,
-             "POST" <- conn.method do
-          # TODO - Make this use atoms and do a reverse lookup
-          rpc = Enum.find(@rpcs, fn rpc -> rpc.method == method end)
-          result = apply(options[:handler], rpc.f, [conn, %{inches: 123}])
-          IO.inspect(result, label: "Result")
-
-        # TODO - Pull encoding from content-type. decode into the actual struct
-        # that we've been given
-        # TODO - Move all encoding and decoding logic into a different module
-         body =
-           result
-           |> Map.from_struct()
-           |> Jason.encode!
-
-          conn
-          |> put_resp_content_type("application/json")
-          |> send_resp(200, body)
-          |> halt()
-        else
-          _ ->
-            conn
-        end
-      end
-
-      def valid_request(conn) do
-        cond do
-          conn.method != "POST" ->
-            {:error, Twirp.Error.bad_route("HTTP request method must be POST")}
-
-          !valid_content_type?(conn.get_req_header("content-type")) ->
-            {:error, "content-type is wrong"}
-
-          true ->
-            {:ok, conn}
-        end
-      end
-
-      def valid_content_type?([]), do: false
-      def valid_content_type?([type]) when type in @valid_content_types, do: true
-
-      # Twirp errors are always returned as json responses
-      def error_response(conn, error) do
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(404, %{code: "bad_route", msg: "method must be POST"})
-      end
-
-      def rpcs do
-        @rpcs
+      def definition do
+        conform!(%{package: @package, service: @service, rpcs: @rpcs}, s())
       end
     end
   end
