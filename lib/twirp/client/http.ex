@@ -3,14 +3,24 @@ defmodule Twirp.Client.HTTP do
 
   alias Twirp.Error
 
-  def call(client, base_path, rpcdef, req) do
+  def call(client, base_path, rpcdef, req, opts \\ []) do
     path = "#{base_path}/#{rpcdef.method}"
 
-    # TODO - Handle encoding errors
+    opts = build_hackney_opts(opts)
+
     content_type = req_content_type(client)
     encoded_payload = Encoder.encode(req, rpcdef.input, content_type)
 
-    case Tesla.post(client, path, encoded_payload) do
+    case Tesla.post(client, path, encoded_payload, [opts: opts]) do
+      {:error, :timeout} ->
+        meta = %{
+          timeout: Integer.to_string(get_in(opts, [:adapter, :recv_timeout]))
+        }
+        {:error, Error.deadline_exceeded("Deadline to receive data from the service was exceeded", meta)}
+
+      {:error, :econnrefused} ->
+        {:error, Error.unavailable("Service is down")}
+
       {:ok, %{status: status}=env} when status != 200 ->
         {:error, build_error(env, rpcdef)}
 
@@ -104,5 +114,15 @@ defmodule Twirp.Client.HTTP do
     |> Enum.filter(fn {header, _} -> String.downcase(header) == "content-type" end)
     |> Enum.map(fn {_, type} -> type end)
     |> Enum.at(0)
+  end
+
+  defp build_hackney_opts(opts) do
+    case Keyword.get(opts, :timeout) do
+      nil ->
+        [adapter: [recv_timeout: 1_000]]
+
+      val when is_integer(val) ->
+        [adapter: [recv_timeout: val]]
+    end
   end
 end

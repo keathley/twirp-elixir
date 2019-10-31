@@ -1,5 +1,5 @@
 defmodule Twirp.ClientTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Twirp.Error
 
@@ -8,12 +8,6 @@ defmodule Twirp.ClientTest do
     Resp,
     Client,
   }
-
-  import Mox
-
-  Mox.defmock(Twirp.Client.Mock, for: Twirp.Client.Adapter)
-
-  setup :verify_on_exit!
 
   setup do
     service = Bypass.open()
@@ -31,14 +25,20 @@ defmodule Twirp.ClientTest do
     assert {:rpc, 3} in Client.__info__(:functions)
   end
 
-  test "makes an http call if the rpc is defined" do
-    Twirp.Client.Mock
-    |> expect(:call, fn _client, _path, _rpcdef, _req ->
-      {:ok, Resp.new(msg: "test")}
+  test "makes an http call if the rpc is defined", %{service: service, client: client} do
+    Bypass.expect(service, fn conn ->
+      assert Plug.Conn.get_req_header(conn, "content-type") == ["application/protobuf"]
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      assert %Req{msg: "test"} == Req.decode(body)
+
+      body = Resp.encode(Resp.new(msg: "test"))
+
+      conn
+      |> Plug.Conn.put_resp_content_type("application/protobuf")
+      |> Plug.Conn.resp(200, body)
     end)
 
-    client = Client.client("", [])
-    resp = Client.rpc(client, :Echo, Req.new(msg: "test"), Twirp.Client.Mock)
+    resp = Client.rpc(client, :Echo, Req.new(msg: "test"))
     assert {:ok, Resp.new(msg: "test")} == resp
   end
 
@@ -142,6 +142,13 @@ defmodule Twirp.ClientTest do
     assert match?(%Error{code: :internal}, resp)
     assert resp.meta.http_error_from_intermediary == "true"
     assert resp.meta.not_a_twirp_error_because == "Redirects not allowed on Twirp requests"
+  end
+
+  test "service is down", %{service: service, client: client} do
+    Bypass.down(service)
+
+    assert {:error, resp} = Client.echo(client, Req.new(msg: "test"))
+    assert resp.code == :unavailable
   end
 end
 

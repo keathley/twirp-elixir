@@ -21,11 +21,12 @@ defmodule Twirp.Client do
     fs_to_define =
       Enum.map(rpcs, fn r ->
         quote do
-          def unquote(r.handler_fn)(client, %unquote(r.input){}=req) do
+          def unquote(r.handler_fn)(client, %unquote(r.input){}=req, opts \\ []) do
             rpc(
               client,
               unquote(r.method),
-              req
+              req,
+              opts
             )
           end
         end
@@ -43,15 +44,16 @@ defmodule Twirp.Client do
         Tesla.client(middleware ++ base_middleware, Tesla.Adapter.Hackney)
       end
 
-      def rpc(client, method, req, adapter \\ Twirp.Client.HTTP) do
+      def rpc(client, method, req, opts \\ []) do
         rpcdef = unquote(Macro.escape(rpc_map))[method]
 
         if rpcdef do
-          adapter.call(
+          Twirp.Client.HTTP.call(
             client,
             unquote(service_path),
             rpcdef,
-            req
+            req,
+            opts
           )
         else
           {:error, Twirp.Error.bad_route("rpc not defined on this client")}

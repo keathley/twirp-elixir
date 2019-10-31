@@ -24,6 +24,7 @@ defmodule Twirp.TestService do
     service "ClientTest"
 
     rpc :Echo, Req, Resp, :echo
+    rpc :SlowEcho, Req, Resp, :slow_echo
   end
 
   defmodule Client do
@@ -32,6 +33,11 @@ defmodule Twirp.TestService do
 
   defmodule Handler do
     def echo(_conn, %Req{msg: msg}) do
+      %Resp{msg: msg}
+    end
+
+    def slow_echo(_conn, %Req{msg: msg}) do
+      :timer.sleep(50)
       %Resp{msg: msg}
     end
   end
