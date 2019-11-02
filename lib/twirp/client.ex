@@ -16,11 +16,12 @@ defmodule Twirp.Client do
     rpcs = service.rpcs
     rpc_map = for rpc <- rpcs, do: {rpc.method, rpc}, into: %{}
 
-    service_path = Path.join(["twirp", service.package, service.service])
+    service_path = Path.join(["twirp", "#{service.package}.#{service.service}"])
 
     fs_to_define =
       Enum.map(rpcs, fn r ->
         quote do
+          # TODO - Clean up this pattern match / error handling
           def unquote(r.handler_fn)(client, %unquote(r.input){}=req, opts \\ []) do
             rpc(
               client,

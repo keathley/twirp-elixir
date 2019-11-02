@@ -22,14 +22,22 @@ defmodule Twirp.Encoder do
   def decode(bytes, input, @json <> _) do
     # TODO - Write tests for atoms! failing and for decoding failing
     # TODO - Do better validation of json input
-    payload = Jason.decode!(bytes, keys: :atoms!)
-    {:ok, input.new(payload)}
+    case Jason.decode(bytes, keys: :atoms!) do
+      {:ok, body} ->
+        {:ok, input.new(body)}
+
+      {:error, e} ->
+        {:error, e}
+    end
   end
 
   def decode(bytes, input, @proto <> _) do
     payload = input.decode(bytes)
 
     {:ok, payload}
+  catch
+    :error, reason ->
+      {:error, reason}
   end
 
   def decode_json(bytes) do

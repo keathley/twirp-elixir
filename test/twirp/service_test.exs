@@ -1,5 +1,5 @@
 defmodule Twirp.ServiceTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   defmodule Req do
     def new(input) do
