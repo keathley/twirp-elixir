@@ -1,15 +1,23 @@
 defmodule Twirp.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :twirp,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
-      deps: deps()
+      deps: deps(),
+
+      description: description(),
+      package: package(),
+      name: "Twirp",
+      source_url: "https://github.com/keathley/twirp",
+      docs: docs()
     ]
   end
 
@@ -39,6 +47,29 @@ defmodule Twirp.MixProject do
       {:mox, "~> 0.5", only: [:dev, :test]},
       {:bypass, "~> 1.0", only: [:dev, :test]},
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
+      {:ex_doc, "~> 0.19", only: [:dev, :test]}
+    ]
+  end
+
+  def description do
+    """
+    Twirp provides an elixir implementation of the twirp rpc framework.
+    """
+  end
+
+  def package do
+    [
+      name: "twirp",
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/keathley/twirp"}
+    ]
+  end
+
+  def docs do
+    [
+      source_ref: "v#{@version}",
+      source_url: "https://github.com/keathley/twirp",
+      main: "Twirp"
     ]
   end
 end
