@@ -28,6 +28,10 @@ defmodule Twirp.Service do
     })
   end
 
+  def full_name(service) do
+    "#{service.package}.#{service.service}"
+  end
+
   defmacro package(str) do
     quote do
       @package unquote(str)
