@@ -26,12 +26,16 @@ defmodule Twirp.Client.HTTP do
 
       {:ok, %{status: 200}=env} ->
         handle_success(env, rpcdef, content_type)
+
+      other ->
+        {:error, Error.internal("unhandled response after making RPC POST: #{inspect other}")}
     end
   end
 
   def handle_success(env, rpcdef, content_type) do
     resp_content_type = resp_header(env, "content-type")
 
+    # TODO - Figure out how to unify these ideas between client and service
     if resp_content_type && String.starts_with?(resp_content_type, content_type) do
       Encoder.decode(env.body, rpcdef.output, content_type)
     else
@@ -45,14 +49,7 @@ defmodule Twirp.Client.HTTP do
     cond do
       http_redirect?(status) ->
         location = resp_header(resp, "location")
-        meta = %{
-          http_error_from_intermediary: "true",
-          not_a_twirp_error_because: "Redirects not allowed on Twirp requests",
-          status_code: Integer.to_string(status),
-          location: location,
-        }
-        msg = "Unexpected HTTP Redirect from location=#{location}"
-        Error.internal(msg, meta)
+        redirect_error(location)
 
       true ->
         case Encoder.decode_json(resp.body) do
@@ -73,6 +70,18 @@ defmodule Twirp.Client.HTTP do
             intermediary_error(status, "Response is not JSON", resp.body)
         end
     end
+  end
+
+  defp redirect_error(location) do
+    meta = %{
+      http_error_from_intermediary: "true",
+      not_a_twirp_error_because: "Redirects not allowed on Twirp requests",
+      status_code: Integer.to_string(status),
+      location: location,
+    }
+    msg = "Unexpected HTTP Redirect from location=#{location}"
+
+    Error.internal(msg, meta)
   end
 
   defp intermediary_error(status, reason, body) do
@@ -97,6 +106,7 @@ defmodule Twirp.Client.HTTP do
     300 <= status && status <= 399
   end
 
+  # TODO - Unify this betweeen client and service
   defp resp_header(resp, header) do
     case Enum.find(resp.headers, fn {h, _} -> h == header end) do
       {^header, value} ->

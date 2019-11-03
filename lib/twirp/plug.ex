@@ -47,7 +47,7 @@ defmodule Twirp.Plug do
   end
 
   defp send_error(conn, error) do
-    content_type = Encoder.json_type()
+    content_type = Encoder.type(:json)
     body = Encoder.encode(error, nil, content_type)
 
     conn
@@ -94,7 +94,7 @@ defmodule Twirp.Plug do
     end
   end
 
-  # TODO - Handle the case where rpc handlers raise exceptions
+  # TODO - Handle the case where rpc handlers raise exceptions internally
   defp call_handler(handler, %{rpc: %{handler_fn: f, output: output}}=env) do
     if function_exported?(handler, f, 2) do
       case apply(handler, f, [env, env.input]) do

@@ -12,13 +12,6 @@ defmodule Twirp.Encoder do
   def type(:proto), do: @proto
   def type(:json), do: @json
 
-  # TODO - Remove these
-  def json_type, do: @json
-
-  def proto_type, do: @proto
-
-  def proto?(content_type), do: content_type == @proto
-
   def decode(bytes, input, @json <> _) do
     # TODO - Write tests for atoms! failing and for decoding failing
     # TODO - Do better validation of json input
