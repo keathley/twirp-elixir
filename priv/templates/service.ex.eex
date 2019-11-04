@@ -1,0 +1,16 @@
+defmodule <%= mod_name %>Service do
+  @moduledoc false
+  use Twirp.Service
+
+  package "<%= package %>"
+  service "<%= service_name %>"
+
+  <%= Enum.map methods, fn(method) -> %>
+      rpc <%= method %>
+  <% end %>
+end
+
+defmodule <%= mod_name %>Client do
+  @moduledoc false
+  use Twirp.Client, service: <%= mod_name %>Service
+end

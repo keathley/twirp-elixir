@@ -9,6 +9,7 @@ defmodule Twirp.MixProject do
       version: @version,
       elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
+      escript: escript(),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
@@ -32,6 +33,10 @@ defmodule Twirp.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  def escript do
+    [main_module: Twirp.Protoc.CLI, name: "protoc-gen-twirp_elixir", app: nil]
+  end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
