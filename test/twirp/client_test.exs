@@ -151,4 +151,3 @@ defmodule Twirp.ClientTest do
     assert resp.code == :unavailable
   end
 end
-

@@ -1,4 +1,12 @@
 defmodule Twirp.Error do
+  @moduledoc """
+  This module defines the different error codes as specified in
+  https://twitchtv.github.io/twirp/docs/spec_v5.html#error-codes.
+
+  We provide a function for each error code to that its easy for users to return
+  errors in their handlers.
+  """
+
   import Norm
 
   @error_code_to_http_status %{
@@ -53,4 +61,3 @@ defmodule Twirp.Error do
     conform!(%__MODULE__{code: code, msg: msg, meta: Enum.into(meta, %{})}, s())
   end
 end
-

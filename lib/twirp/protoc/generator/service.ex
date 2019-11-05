@@ -1,4 +1,7 @@
 defmodule Twirp.Protoc.Generator.Service do
+  @moduledoc false
+  # Build a service file
+
   alias Protobuf.Protoc.Generator.Util
 
   def generate_list(ctx, descs) do

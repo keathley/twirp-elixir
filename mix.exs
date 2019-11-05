@@ -31,7 +31,6 @@ defmodule Twirp.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   def escript do
@@ -49,7 +48,7 @@ defmodule Twirp.MixProject do
       {:google_protos, "~>0.1"},
       {:hackney, "~> 1.15"},
 
-      {:mox, "~> 0.5", only: [:dev, :test]},
+      {:credo, "~> 1.1", only: [:dev]},
       {:bypass, "~> 1.0", only: [:dev, :test]},
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
       {:ex_doc, "~> 0.19", only: [:dev, :test]}

@@ -1,4 +1,8 @@
 defmodule Twirp.Service do
+  @moduledoc """
+  Provides a DSL and some convenience functions for defining twirp service
+  definitions.
+  """
   import Norm
 
   defmacro __using__(_opts) do
@@ -67,4 +71,3 @@ defmodule Twirp.Service do
     end
   end
 end
-

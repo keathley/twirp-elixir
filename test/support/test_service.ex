@@ -1,5 +1,8 @@
 defmodule Twirp.TestService do
+  @moduledoc false
+
   defmodule Req do
+    @moduledoc false
     use Protobuf, syntax: :proto3
 
     @derive Jason.Encoder
@@ -9,6 +12,7 @@ defmodule Twirp.TestService do
   end
 
   defmodule Resp do
+    @moduledoc false
     use Protobuf, syntax: :proto3
 
     @derive Jason.Encoder
@@ -18,6 +22,7 @@ defmodule Twirp.TestService do
   end
 
   defmodule Service do
+    @moduledoc false
     use Twirp.Service
 
     package "client.test"
@@ -28,10 +33,12 @@ defmodule Twirp.TestService do
   end
 
   defmodule Client do
+    @moduledoc false
     use Twirp.Client, service: Service
   end
 
   defmodule Handler do
+    @moduledoc false
     def echo(_conn, %Req{msg: msg}) do
       %Resp{msg: msg}
     end

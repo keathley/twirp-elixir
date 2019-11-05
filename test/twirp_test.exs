@@ -62,4 +62,3 @@ defmodule TwirpTest do
   #   flunk "Not Implemented"
   # end
 end
-
