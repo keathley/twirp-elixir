@@ -13,7 +13,7 @@ Add Twirp to your list of dependencies:
 ```elixir
 def deps do
   [
-    {:twirp, "~> 0.1.0"}
+    {:twirp, "~> 0.2.0"}
   ]
 end
 ```
