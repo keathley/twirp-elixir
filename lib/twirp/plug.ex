@@ -1,8 +1,24 @@
 defmodule Twirp.Plug do
-  import Plug.Conn
+  @moduledoc """
+  Provides a plug that takes service and handler module. If the request is
+  directed at the "twirp" endpoint then the plug will intercept the conn and
+  process it. Otherwise it allows the conn to pass through. This is a deviation
+  from the twirp specification but it allows users to include twirp services
+  into their existing plug stacks.
+
+  You can use the plug like so:
+
+  ```elixir
+  plug Twirp.Plug,
+    service: MyService,
+    handler: MyHandler,
+  ```
+  """
 
   alias Twirp.Encoder
   alias Twirp.Error
+
+  import Plug.Conn
 
   @content_type "content-type"
 
@@ -117,4 +133,3 @@ defmodule Twirp.Plug do
     Error.bad_route(msg, twirp_invalid_route: "#{conn.method} #{conn.request_path}")
   end
 end
-

@@ -1,4 +1,9 @@
 defmodule Twirp.Encoder do
+  @moduledoc false
+  # Encodes and Decodes messages based on the requests content-type header.
+  # For json we delegate to Jason. for protobuf responses we use the input or
+  # output types.
+
   @json "application/json"
   @proto "application/protobuf"
 
@@ -53,4 +58,3 @@ defmodule Twirp.Encoder do
     output.encode(payload)
   end
 end
-

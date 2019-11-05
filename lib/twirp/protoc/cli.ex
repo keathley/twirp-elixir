@@ -1,4 +1,10 @@
 defmodule Twirp.Protoc.CLI do
+  @moduledoc false
+  # Almost all of this generation stuff is lifted from the elixr protobuf library.
+  # I don't love the way its implemented but it was the fastest path forward for
+  # supporting generation of services. I'm going to revisit in the future
+  # because I barely understand how this code works.
+
   def main(_) do
     # https://groups.google.com/forum/#!topic/elixir-lang-talk/T5enez_BBTI
     :io.setopts(:standard_io, encoding: :latin1)

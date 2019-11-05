@@ -1,6 +1,10 @@
 defmodule Twirp.Client.HTTP do
-  alias Twirp.Encoder
+  @moduledoc false
+  # This module handles the internals of making RPC calls. We delegate to this
+  # from the actual client module cuz otherwise the client module is a pita
+  # to understand due to the macros and functions its creating.
 
+  alias Twirp.Encoder
   alias Twirp.Error
 
   def call(client, base_path, rpcdef, req, opts \\ []) do

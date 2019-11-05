@@ -1,4 +1,7 @@
 defmodule Twirp.Protoc.Generator do
+  @moduledoc false
+  # What even does this code do?
+
   alias Twirp.Protoc.Generator.Service, as: ServiceGenerator
 
   def generate(ctx, desc) do
@@ -68,4 +71,3 @@ defmodule Twirp.Protoc.Generator do
     end
   end
 end
-

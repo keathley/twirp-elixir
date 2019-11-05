@@ -1,4 +1,8 @@
 defmodule Twirp.Client do
+  @moduledoc """
+  Provides a macro for generating clients based on service definitions.
+  """
+
   defmacro __using__(opts) do
     quote do
       import Twirp.Client
