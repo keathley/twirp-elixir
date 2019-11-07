@@ -38,15 +38,37 @@ defmodule Twirp.Client do
       end)
 
     quote do
+      def start(adapter_opts \\ []) do
+        default_opts = [
+          timeout: 150_000,
+          max_connections: 60
+        ]
+
+        opts = Keyword.merge(default_opts, Keyword.take(adapter_opts, [:timeout, :max_connections]))
+               # |> IO.inspect(label: "Pool options")
+        name = Keyword.get(adapter_opts, :pool_name, __MODULE__.Pool)
+
+        :hackney_pool.start_pool(name, opts)
+      end
+
       # TODO - This should also allow you to configure the adapter
       # Maybe we should allow people to pass in the client or whatever as well.
-      def client(content_type \\ :proto, base_url, middleware) when is_binary(base_url) do
+      def client(content_type \\ :proto, base_url, middleware, adapter_opts) when is_binary(base_url) do
         base_middleware = [
           {Tesla.Middleware.BaseUrl, base_url},
           {Tesla.Middleware.Headers, [{"Content-Type", Twirp.Encoder.type(content_type)}]},
         ]
 
-        Tesla.client(middleware ++ base_middleware, Tesla.Adapter.Hackney)
+        default_adapter_opts = [
+          recv_timeout: 1_000,
+          pool: __MODULE__.Pool,
+          connect_timeout: 500
+        ]
+
+        adapter_opts = Keyword.merge(default_adapter_opts, adapter_opts)
+                       # |> IO.inspect(label: "Adapter options")
+
+        Tesla.client(middleware ++ base_middleware, {Tesla.Adapter.Hackney, adapter_opts})
       end
 
       def rpc(client, method, req, opts \\ []) do

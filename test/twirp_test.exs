@@ -38,7 +38,7 @@ defmodule TwirpTest do
   end
 
   setup do
-    client = Client.client("http://localhost:4002", [])
+    client = Client.client("http://localhost:4002", [], [])
 
     {:ok, client: client}
   end
@@ -55,10 +55,6 @@ defmodule TwirpTest do
 
     assert {:error, resp} = Client.slow_echo(client, req, timeout: 5)
     assert resp.code == :deadline_exceeded
-    assert resp.meta.timeout == "5"
+    assert resp.meta.error_type == "timeout"
   end
-
-  # test "test what happens if the client hits a service endpoint that doesn't exist" do
-  #   flunk "Not Implemented"
-  # end
 end
