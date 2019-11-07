@@ -16,10 +16,8 @@ defmodule Twirp.Client.HTTP do
     encoded_payload = Encoder.encode(req, rpcdef.input, content_type)
 
     case Tesla.post(client, path, encoded_payload, [opts: opts]) do
-      {:error, :timeout} ->
-        meta = %{
-          timeout: Integer.to_string(get_in(opts, [:adapter, :recv_timeout]))
-        }
+      {:error, error} when error in [:timeout, :connect_timeout, :checkout_timeout] ->
+        meta = %{error_type: Atom.to_string(error)}
         {:error, Error.deadline_exceeded("Deadline to receive data from the service was exceeded", meta)}
 
       {:error, :econnrefused} ->

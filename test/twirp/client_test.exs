@@ -12,7 +12,7 @@ defmodule Twirp.ClientTest do
   setup do
     service = Bypass.open()
     base_url = "http://localhost:#{service.port}"
-    client = Client.client(base_url, [])
+    client = Client.client(base_url, [], [])
 
     {:ok, service: service, client: client}
   end
@@ -53,7 +53,7 @@ defmodule Twirp.ClientTest do
       |> Plug.Conn.resp(200, ~s|{"msg": "Test"}|)
     end)
 
-    client = Client.client(:json, "http://localhost:#{service.port}", [])
+    client = Client.client(:json, "http://localhost:#{service.port}", [], [])
 
     assert {:ok, resp} = Client.echo(client, Req.new(msg: "Test"))
     assert match?(%Resp{}, resp)
@@ -61,7 +61,7 @@ defmodule Twirp.ClientTest do
   end
 
   test "if rpc is not defined return an error" do
-    client = Client.client("", [])
+    client = Client.client("", [], [])
     {:error, resp} = Client.rpc(client, :Undefined, Req.new(msg: "test"))
     assert match?(%Twirp.Error{code: :bad_route}, resp)
   end
@@ -149,5 +149,13 @@ defmodule Twirp.ClientTest do
 
     assert {:error, resp} = Client.echo(client, Req.new(msg: "test"))
     assert resp.code == :unavailable
+  end
+
+  describe "pools" do
+    test "start/1 starts a dedicated hackney pool" do
+      assert :ok == Client.start()
+      assert pid = :hackney_pool.find_pool(Client.Pool)
+      assert is_pid(pid)
+    end
   end
 end
