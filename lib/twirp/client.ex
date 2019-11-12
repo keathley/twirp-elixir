@@ -22,6 +22,13 @@ defmodule Twirp.Client do
 
     service_path = Path.join(["twirp", "#{service.package}.#{service.service}"])
 
+    callbacks =
+      Enum.map(rpcs, fn r ->
+        quote do
+          @callback unquote(r.handler_fn)(term(), unquote(r.input)) :: {:ok, unquote(r.output)} | {:error, %Twirp.Error{}}
+        end
+      end)
+
     fs_to_define =
       Enum.map(rpcs, fn r ->
         quote do
@@ -38,6 +45,8 @@ defmodule Twirp.Client do
       end)
 
     quote do
+      unquote(callbacks)
+
       def start(adapter_opts \\ []) do
         default_opts = [
           timeout: 150_000,

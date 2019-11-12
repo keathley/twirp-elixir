@@ -51,7 +51,8 @@ defmodule Twirp.MixProject do
       {:credo, "~> 1.1", only: [:dev]},
       {:bypass, "~> 1.0", only: [:dev, :test]},
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
-      {:ex_doc, "~> 0.19", only: [:dev, :test]}
+      {:ex_doc, "~> 0.19", only: [:dev, :test]},
+      {:mox, "~> 0.5", only: [:test]},
     ]
   end
 
