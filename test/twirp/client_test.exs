@@ -158,4 +158,11 @@ defmodule Twirp.ClientTest do
       assert is_pid(pid)
     end
   end
+
+  test "clients are easy to mock" do
+    MockClient
+    |> Mox.expect(:echo, fn _, "foo" -> Error.unavailable("test") end)
+
+    assert %Error{code: :unavailable} = MockClient.echo(nil, "foo")
+  end
 end
