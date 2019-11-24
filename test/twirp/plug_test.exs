@@ -249,13 +249,23 @@ defmodule Twirp.PlugTest do
     assert resp["msg"] == "Handler method make_hat expected to return one of Elixir.Twirp.PlugTest.Hat or Twirp.Error but returned \"invalid\""
   end
 
-  @tag :skip
   test "handler receives env" do
+    req = proto_req("MakeHat", Size.new(inches: 10))
+    conn = call(req)
+
+    assert conn.status == 200
+    assert Hat.new(color: "red") == Hat.decode(conn.resp_body)
     flunk "Not Implemented"
   end
 
   @tag :skip
   test "handler raises exception" do
     flunk "Not Implemented"
+  end
+
+  describe "before hook" do
+    test "is called with a context" do
+      flunk "Not Implemented"
+    end
   end
 end
