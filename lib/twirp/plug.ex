@@ -85,9 +85,26 @@ defmodule Twirp.Plug do
       rpcs[method] == nil ->
         {:error, bad_route("Invalid rpc method: #{method}", conn)}
 
+      Encoder.json?(content_type) and body_params?(conn) ->
+        IO.inspect(conn, label: "Got body params")
+        rpc_def = rpcs[method]
+        input = rpc_def.input.new(conn.body_params)
+        env = %{content_type: content_type, rpc: rpc_def, input: input}
+        IO.inspect(env, label: "Env")
+        {:ok, conn, env}
+
+        # Check to see that the input matches correctly
+
       # If we've got here we can attempt to decode the response body
       true ->
         decode_body(conn, rpcs[method], content_type)
+    end
+  end
+
+  defp body_params?(conn) do
+    case conn.body_params do
+      %Plug.Conn.Unfetched{} -> false
+      _ -> true
     end
   end
 
