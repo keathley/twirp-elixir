@@ -42,7 +42,7 @@ defmodule Twirp.MixProject do
     [
       {:plug, "~> 1.8"},
       {:tesla, "~> 1.3"},
-      {:norm, "~> 0.8"},
+      {:norm, "~> 0.9"},
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},

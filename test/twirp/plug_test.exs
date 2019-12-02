@@ -249,6 +249,33 @@ defmodule Twirp.PlugTest do
     assert resp["msg"] == "Handler method make_hat expected to return one of Elixir.Twirp.PlugTest.Hat or Twirp.Error but returned \"invalid\""
   end
 
+  describe "when the body has been pre-parsed" do
+    test "json requests use the body params" do
+      req = json_req("MakeHat", %{})
+      req = Map.put(req, :body_params, %{"inches" => 10})
+      conn = call(req)
+
+      assert conn.status == 200
+      assert resp = Jason.decode!(conn.resp_body)
+      assert resp["color"] != nil
+    end
+
+    test "returns errors if the payload is incorrect" do
+      req = json_req("MakeHat", %{})
+      req = Map.put(req, :body_params, %{"keathley" => "bar"})
+      conn = call(req)
+
+      assert conn.status == 404
+      assert content_type(conn) == "application/json"
+      resp = Jason.decode!(conn.resp_body)
+      assert resp["code"] == "bad_route"
+      assert resp["msg"] == "Invalid request body for rpc method: MakeHat"
+      assert resp["meta"] == %{
+        "twirp_invalid_route" => "POST /twirp/plug.test.Haberdasher/MakeHat"
+      }
+    end
+  end
+
   @tag :skip
   test "handler receives env" do
     flunk "Not Implemented"

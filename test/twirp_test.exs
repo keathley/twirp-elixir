@@ -22,6 +22,10 @@ defmodule TwirpTest do
   defmodule TestRouter do
     use Plug.Router
 
+    plug Plug.Parsers, parsers: [:urlencoded, :json],
+      pass: ["*/*"],
+      json_decoder: Jason
+
     plug Twirp.Plug, service: Service, handler: Handler
 
     plug :match
@@ -46,6 +50,14 @@ defmodule TwirpTest do
   test "clients can call services", %{client: client} do
     req = Req.new(msg: "Hello there")
 
+    assert {:ok, %Resp{}=resp} = Client.echo(client, req)
+    assert resp.msg == "Hello there"
+  end
+
+  test "can call services with json" do
+    req = Req.new(msg: "Hello there")
+
+    client = Client.client(:json, "http://localhost:4002", [], [])
     assert {:ok, %Resp{}=resp} = Client.echo(client, req)
     assert resp.msg == "Hello there"
   end
