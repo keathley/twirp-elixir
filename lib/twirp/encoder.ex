@@ -17,14 +17,11 @@ defmodule Twirp.Encoder do
   def type(:proto), do: @proto
   def type(:json), do: @json
 
-  # TODO - Remove these
-  def json_type, do: @json
-
-  def proto_type, do: @proto
-
   def proto?(content_type), do: content_type == @proto
 
-  def decode(bytes, input, @json <> _) do
+  def json?(content_type), do: content_type == @json
+
+  def decode(bytes, input, @json <> _) when is_binary(bytes) do
     # TODO - Write tests for atoms! failing and for decoding failing
     # TODO - Do better validation of json input
     case Jason.decode(bytes, keys: :atoms!) do
@@ -34,6 +31,20 @@ defmodule Twirp.Encoder do
       {:error, e} ->
         {:error, e}
     end
+  end
+  def decode(map, input, @json <> _) do
+    map_with_atoms =
+      map
+      |> Enum.map(fn {key, v} ->
+        k = if is_binary(key), do: String.to_existing_atom(key), else: key
+        {k, v}
+      end)
+      |> Enum.into(%{})
+
+    {:ok, input.new(map_with_atoms)}
+  rescue
+    e ->
+      {:error, e}
   end
 
   def decode(bytes, input, @proto <> _) do
