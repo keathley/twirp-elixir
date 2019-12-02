@@ -276,13 +276,34 @@ defmodule Twirp.PlugTest do
     end
   end
 
-  @tag :skip
   test "handler receives env" do
-    flunk "Not Implemented"
+    defmodule HandlerWithEnv do
+      def make_hat(env, _) do
+        assert Norm.valid?(env, Norm.selection(Twirp.Plug.env_s()))
+      end
+    end
+
+    opts = Twirp.Plug.init([service: Service, handler: RaiseHandler])
+    req = proto_req("MakeHat", Size.new(inches: 10))
+    call(req, opts)
   end
 
-  @tag :skip
   test "handler raises exception" do
-    flunk "Not Implemented"
+    defmodule RaiseHandler do
+      def make_hat(_env, _size) do
+        raise ArgumentError, "Blow this ish up"
+      end
+    end
+
+    opts = Twirp.Plug.init([service: Service, handler: RaiseHandler])
+    req = proto_req("MakeHat", Size.new(inches: 10))
+    conn = call(req, opts)
+
+    assert conn.status == 500
+    assert content_type(conn) == "application/json"
+    resp = Jason.decode!(conn.resp_body)
+    assert resp["code"] == "internal"
+    assert resp["msg"] == "Blow this ish up"
+    assert resp["meta"] == %{}
   end
 end

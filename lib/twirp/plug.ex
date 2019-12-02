@@ -164,6 +164,9 @@ defmodule Twirp.Plug do
     else
       {:error, Error.unimplemented("Handler function #{env.handler_fn} is not implemented")}
     end
+  rescue
+    exception ->
+      {:error, Error.internal(Exception.message(exception))}
   end
 
   defp content_type(conn) do
