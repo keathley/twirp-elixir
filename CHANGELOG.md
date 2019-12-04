@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.3.0 (December 04, 2019)
+
+* [0a85ecc](https://github.com/keathley/twirp/commit/0a85eccc588ea72dfb117bd599c80c1254c414e8) Support hooks around twirp services - Chris Keathley
+
 ## 0.2.1 (December 02, 2019)
 
 * [5b446e3](https://github.com/keathley/twirp/commit/5b446e3b98241ae01680b3fcd1b2e38e22008050) Add support for hackney pools - Chris Keathley
