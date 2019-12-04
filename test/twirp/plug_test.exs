@@ -161,12 +161,12 @@ defmodule Twirp.PlugTest do
   end
 
   test "handler doesn't define function" do
-    {service_def, _} = Twirp.Plug.init([service: Service, handler: Handler])
+    opts = Twirp.Plug.init([service: Service, handler: EmptyHandler])
     req = proto_req("MakeHat", Size.new(inches: 10))
 
     # We need to manually set options like this to skip the
     # compile time checking done in init.
-    conn = call(req, {service_def, EmptyHandler})
+    conn = call(req, opts)
     assert conn.status == 501
     assert content_type(conn) == "application/json"
     resp = Jason.decode!(conn.resp_body)
@@ -305,5 +305,118 @@ defmodule Twirp.PlugTest do
     assert resp["code"] == "internal"
     assert resp["msg"] == "Blow this ish up"
     assert resp["meta"] == %{}
+  end
+
+  describe "before" do
+    test "hooks are run before the handler is called" do
+      us = self()
+
+      f = fn conn, env ->
+        assert %Plug.Conn{} = conn
+        assert Norm.valid?(env, Norm.selection(Twirp.Plug.env_s()))
+        assert env.input == Size.new(inches: 10)
+        send(us, :plug_called)
+        env
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: GoodHandler,
+        before: [f]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      _conn = call(req, opts)
+      assert_receive :plug_called
+    end
+
+    test "hooks can update the env" do
+      us = self()
+
+      first = fn _conn, env ->
+        Map.put(env, :test, :foobar)
+      end
+
+      second = fn _conn, env ->
+        assert env.test == :foobar
+        send(us, :done)
+        env
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: GoodHandler,
+        before: [first, second]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      _conn = call(req, opts)
+      assert_receive :done
+    end
+
+    test "before hooks are halted if they return an error" do
+      first = fn _conn, _env ->
+        Twirp.Error.permission_denied("You're not authorized for this")
+      end
+      second = fn _conn, _env ->
+        flunk "I should never make it here"
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: GoodHandler,
+        before: [first, second]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      _conn = call(req, opts)
+    end
+  end
+
+  describe "on_success hooks" do
+    test "are called if the rpc handler was successful" do
+      us = self()
+
+      first = fn env ->
+        assert env.output == Hat.encode(Hat.new(color: "red"))
+        send us, :done
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: GoodHandler,
+        on_success: [first]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      _conn = call(req, opts)
+      assert_receive :done
+    end
+  end
+
+  describe "on_error hooks" do
+    test "run if the handler returns an error" do
+      defmodule ErrorHandler do
+        def make_hat(_, _) do
+          Twirp.Error.permission_denied("not allowed")
+        end
+      end
+
+      us = self()
+
+      first = fn _env, error ->
+        assert error == Twirp.Error.permission_denied("not allowed")
+        send us, :done
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: ErrorHandler,
+        on_error: [first]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      conn = call(req, opts)
+      assert_receive :done
+
+      assert conn.status == 500
+      error = Jason.decode!(conn.resp_body)
+      assert error["code"] == "permission_denied"
+    end
   end
 end
