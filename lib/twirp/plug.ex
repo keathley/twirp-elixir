@@ -35,10 +35,30 @@ defmodule Twirp.Plug do
     })
   end
 
-  def init([service: service_mod, handler: handler]) when is_atom(service_mod) and is_atom(handler) do
+  def hook_result_s() do
+    alt(
+      env: selection(env_s()),
+      error: schema(%Twirp.Error{})
+    )
+  end
+
+  def init(args) do
+    handler =
+      args
+      |> Keyword.fetch!(:handler)
+
     service_def =
-      service_mod.definition()
+      args
+      |> Keyword.fetch!(:service)
+      |> apply(:definition, [])
       |> Norm.conform!(Twirp.Service.s())
+
+    hooks = %{
+      before: Keyword.get(args, :before, []),
+      on_success: Keyword.get(args, :on_success, []),
+      on_error: Keyword.get(args, :on_error, []),
+      on_exception: Keyword.get(args, :on_exception, []),
+    }
 
     rpc_defs =
       for rpc <- service_def.rpcs,
@@ -50,25 +70,45 @@ defmodule Twirp.Plug do
       |> Map.put(:rpcs, rpc_defs)
       |> Map.put(:full_name, Twirp.Service.full_name(service_def))
 
-    {service_def, handler}
+    {service_def, handler, hooks}
   end
 
-  def call(%{path_info: ["twirp", full_name, method]}=conn, {%{full_name: full_name}=service, handler}) do
-    with {:ok, env} <- validate_req(conn, method, service),
-         {:ok, env, conn} <- get_input(env, conn),
-         {:ok, output} <- call_handler(handler, env)
-    do
-      # We're safe to just get the output because call_handler has handled
-      # the error case for us
-      resp = Encoder.encode(output, env.output_type, env.content_type)
+  def call(%{path_info: ["twirp", full_name, method]}=conn, {%{full_name: full_name}=service, handler, hooks}) do
+    env = %{}
 
-      conn
-      |> put_resp_content_type(env.content_type)
-      |> send_resp(200, resp)
-      |> halt()
-    else
-      {:error, error} ->
-        send_error(conn, error)
+    try do
+      with {:ok, env} <- validate_req(conn, method, service),
+           {:ok, env, conn} <- get_input(env, conn),
+           {:ok, env} <- call_before_hooks(env, conn, hooks),
+           {:ok, output} <- call_handler(handler, env)
+      do
+        # We're safe to just get the output because call_handler has handled
+        # the error case for us
+        resp = Encoder.encode(output, env.output_type, env.content_type)
+
+        env = Map.put(env, :output, resp)
+        call_on_success_hooks(env, hooks)
+
+        conn
+        |> put_resp_content_type(env.content_type)
+        |> send_resp(200, resp)
+        |> halt()
+      else
+        {:error, env, error} ->
+          call_on_error_hooks(hooks, env, error)
+          send_error(conn, error)
+      end
+    rescue
+      exception ->
+        try do
+          call_on_exception_hooks(hooks, env, exception)
+          error = Error.internal(Exception.message(exception))
+          send_error(conn, error)
+        rescue
+          hook_e ->
+            error = Error.internal(Exception.message(hook_e))
+            send_error(conn, error)
+        end
     end
   end
 
@@ -78,28 +118,33 @@ defmodule Twirp.Plug do
 
   def validate_req(conn, method, %{rpcs: rpcs}) do
     content_type = content_type(conn)
+    env = %{
+      content_type: content_type,
+      http_response_headers: %{},
+      method_name: method,
+    }
 
     cond do
       conn.method != "POST" ->
-        {:error, bad_route("HTTP request must be POST", conn)}
+        {:error, env, bad_route("HTTP request must be POST", conn)}
 
       !Encoder.valid_type?(content_type) ->
-        {:error, bad_route("Unexpected Content-Type: #{content_type || "nil"}", conn)}
+        {:error, env, bad_route("Unexpected Content-Type: #{content_type || "nil"}", conn)}
 
       rpcs[method] == nil ->
-        {:error, bad_route("Invalid rpc method: #{method}", conn)}
+        {:error, env, bad_route("Invalid rpc method: #{method}", conn)}
 
       true ->
         rpc = rpcs[method]
 
-        env = %{
+        env = Map.merge(env, %{
           content_type: content_type,
           http_response_headers: %{},
           method_name: rpc.method,
           input_type: rpc.input,
           output_type: rpc.output,
           handler_fn: rpc.handler_fn,
-        }
+        })
 
         {:ok, conform!(env, env_s())}
     end
@@ -113,7 +158,7 @@ defmodule Twirp.Plug do
       {:decoding, _} ->
         msg = "Invalid request body for rpc method: #{env.method_name}"
         error = bad_route(msg, conn)
-        {:error, error}
+        {:error, env, error}
     end
   end
 
@@ -133,7 +178,7 @@ defmodule Twirp.Plug do
           {:ok, body, conn}
 
         _ ->
-          {:error, Error.internal("req_body has already been read or is too large to read")}
+          {:error, env, Error.internal("req_body has already been read or is too large to read")}
       end
     end
   end
@@ -145,28 +190,61 @@ defmodule Twirp.Plug do
     end
   end
 
-  # TODO - Handle the case where rpc handlers raise exceptions
   defp call_handler(handler, %{output_type: output_type}=env) do
     env = conform!(env, selection(env_s()))
 
     if function_exported?(handler, env.handler_fn, 2) do
       case apply(handler, env.handler_fn, [env, env.input]) do
         %Error{}=error ->
-          {:error, error}
+          {:error, env, error}
 
         %{__struct__: s}=resp when s == output_type ->
           {:ok, resp}
 
         other ->
           msg = "Handler method #{env.handler_fn} expected to return one of #{env.output_type} or Twirp.Error but returned #{inspect other}"
-          {:error, Error.internal(msg)}
+          {:error, env, Error.internal(msg)}
       end
     else
-      {:error, Error.unimplemented("Handler function #{env.handler_fn} is not implemented")}
+      {:error, env, Error.unimplemented("Handler function #{env.handler_fn} is not implemented")}
     end
-  rescue
-    exception ->
-      {:error, Error.internal(Exception.message(exception))}
+  end
+
+  def call_before_hooks(env, conn, hooks) do
+    result = Enum.reduce_while(hooks.before, env, fn f, updated_env ->
+      result = f.(conn, updated_env)
+
+      case conform!(result, hook_result_s()) do
+        {:error, err} -> {:halt, {:error, err}}
+        {:env, next_env} -> {:cont, next_env}
+      end
+    end)
+
+    case result do
+      {:error, err} ->
+        {:error, env, err}
+
+      env ->
+        {:ok, env}
+    end
+  end
+
+  def call_on_success_hooks(env, hooks) do
+    for hook <- hooks.on_success do
+      hook.(env)
+    end
+  end
+
+  def call_on_error_hooks(hooks, env, error) do
+    for hook <- hooks.on_error do
+      hook.(env, error)
+    end
+  end
+
+  def call_on_exception_hooks(hooks, env, exception) do
+    for hook <- hooks.on_exception do
+      hook.(env, exception)
+    end
   end
 
   defp content_type(conn) do
