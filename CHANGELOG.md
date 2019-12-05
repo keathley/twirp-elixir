@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.3.1 (December 05, 2019)
+
+* [ccd8fc5](https://github.com/keathley/twirp/commit/ccd8fc5637eb03e8bf40d84e2c956bb6cd35d274) Strip struct before encoding as JSON. - Jeffery Utter
+
 ## 0.3.0 (December 04, 2019)
 
 * [0a85ecc](https://github.com/keathley/twirp/commit/0a85eccc588ea72dfb117bd599c80c1254c414e8) Support hooks around twirp services - Chris Keathley
