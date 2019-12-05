@@ -11,6 +11,26 @@ defmodule Twirp.TestService do
     field :msg, 1, type: :string
   end
 
+  defmodule ReqNoJsonProtocol do
+    @moduledoc false
+    use Protobuf, syntax: :proto3
+
+    defstruct [:msg, :sub]
+
+    field :msg, 1, type: :string
+    field :sub, 2, type: ReqSub
+  end
+
+  defmodule ReqSub do
+    @moduledoc false
+
+    use Protobuf, syntax: :proto3
+
+    defstruct [:msg]
+
+    field :msg, 1, type: :string
+  end
+
   defmodule Resp do
     @moduledoc false
     use Protobuf, syntax: :proto3

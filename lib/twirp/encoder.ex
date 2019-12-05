@@ -62,10 +62,19 @@ defmodule Twirp.Encoder do
 
   def encode(payload, _output, @json <> _) do
     payload
+    |> strip_structs()
     |> Jason.encode!
   end
 
   def encode(payload, output, @proto <> _) do
     output.encode(payload)
   end
+
+  defp strip_structs(map) when is_map(map) do
+    map
+    |> Map.drop([:__struct__])
+    |> Enum.into(%{}, fn {k,v} -> {k, strip_structs(v)} end)
+  end
+
+  defp strip_structs(any), do: any
 end
