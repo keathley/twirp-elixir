@@ -12,7 +12,7 @@ defmodule Twirp.ClientTest do
   setup do
     service = Bypass.open()
     base_url = "http://localhost:#{service.port}"
-    client = Client.client(base_url, [], [])
+    client = Client.new(:proto, base_url)
 
     {:ok, service: service, client: client}
   end
@@ -53,7 +53,7 @@ defmodule Twirp.ClientTest do
       |> Plug.Conn.resp(200, ~s|{"msg": "Test"}|)
     end)
 
-    client = Client.client(:json, "http://localhost:#{service.port}", [], [])
+    client = Client.new(:json, "http://localhost:#{service.port}", [])
 
     assert {:ok, resp} = Client.echo(client, Req.new(msg: "Test"))
     assert match?(%Resp{}, resp)
@@ -61,7 +61,7 @@ defmodule Twirp.ClientTest do
   end
 
   test "if rpc is not defined return an error" do
-    client = Client.client("", [], [])
+    client = Client.new(:proto, "", [])
     {:error, resp} = Client.rpc(client, :Undefined, Req.new(msg: "test"))
     assert match?(%Twirp.Error{code: :bad_route}, resp)
   end
@@ -151,18 +151,27 @@ defmodule Twirp.ClientTest do
     assert resp.code == :unavailable
   end
 
-  describe "pools" do
-    test "start/1 starts a dedicated hackney pool" do
-      assert :ok == Client.start()
-      assert pid = :hackney_pool.find_pool(Client.Pool)
-      assert is_pid(pid)
+  test "clients are easy to stub" do
+    client = Twirp.Client.Stub.new(echo: fn %{msg: "foo"} ->
+      Error.unavailable("test")
+    end)
+    assert {:error, %Error{code: :unavailable}} = Client.echo(client, Req.new(msg: "foo"))
+
+    client = Twirp.Client.Stub.new(echo: fn %{msg: "foo"} ->
+      Resp.new(msg: "foo")
+    end)
+    assert {:ok, %Resp{msg: "foo"}} = Client.echo(client, Req.new(msg: "foo"))
+
+    assert_raise Twirp.Client.StubError, ~r/does not define/, fn ->
+      client = Twirp.Client.Stub.new()
+      Client.echo(client, Req.new(msg: "foo"))
     end
-  end
 
-  test "clients are easy to mock" do
-    MockClient
-    |> Mox.expect(:echo, fn _, "foo" -> Error.unavailable("test") end)
-
-    assert %Error{code: :unavailable} = MockClient.echo(nil, "foo")
+    assert_raise Twirp.Client.StubError, ~r/expected to return/, fn ->
+      client = Twirp.Client.Stub.new(echo: fn _ ->
+        {:ok, Req.new(msg: "test")}
+      end)
+      Client.echo(client, Req.new(msg: "foo"))
+    end
   end
 end
