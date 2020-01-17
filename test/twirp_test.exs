@@ -42,7 +42,7 @@ defmodule TwirpTest do
   end
 
   setup do
-    client = Client.client("http://localhost:4002", [], [])
+    client = Client.new(:proto, "http://localhost:4002", [])
 
     {:ok, client: client}
   end
@@ -57,7 +57,7 @@ defmodule TwirpTest do
   test "can call services with json" do
     req = Req.new(msg: "Hello there")
 
-    client = Client.client(:json, "http://localhost:4002", [], [])
+    client = Client.new(:json, "http://localhost:4002", [])
     assert {:ok, %Resp{}=resp} = Client.echo(client, req)
     assert resp.msg == "Hello there"
   end

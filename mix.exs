@@ -41,12 +41,11 @@ defmodule Twirp.MixProject do
   defp deps do
     [
       {:plug, "~> 1.8"},
-      {:tesla, "~> 1.3"},
       {:norm, "~> 0.9"},
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},
-      {:hackney, "~> 1.15"},
+      {:mojito, "~> 0.6"},
 
       {:credo, "~> 1.1", only: [:dev]},
       {:bypass, "~> 1.0", only: [:dev, :test]},

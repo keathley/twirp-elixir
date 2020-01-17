@@ -3,6 +3,9 @@ defmodule Twirp.Client do
   Provides a macro for generating clients based on service definitions.
   """
 
+  alias Twirp.Client.HTTP
+  alias Twirp.Client.Callable
+
   defmacro __using__(opts) do
     quote do
       import Twirp.Client
@@ -22,13 +25,6 @@ defmodule Twirp.Client do
 
     service_path = Path.join(["twirp", "#{service.package}.#{service.service}"])
 
-    callbacks =
-      Enum.map(rpcs, fn r ->
-        quote do
-          @callback unquote(r.handler_fn)(term(), unquote(r.input)) :: {:ok, unquote(r.output)} | {:error, %Twirp.Error{}}
-        end
-      end)
-
     fs_to_define =
       Enum.map(rpcs, fn r ->
         quote do
@@ -45,52 +41,23 @@ defmodule Twirp.Client do
       end)
 
     quote do
-      unquote(callbacks)
-
-      def start(adapter_opts \\ []) do
-        default_opts = [
-          timeout: 150_000,
-          max_connections: 60
-        ]
-
-        opts = Keyword.merge(default_opts, Keyword.take(adapter_opts, [:timeout, :max_connections]))
-               # |> IO.inspect(label: "Pool options")
-        name = Keyword.get(adapter_opts, :pool_name, __MODULE__.Pool)
-
-        :hackney_pool.start_pool(name, opts)
-      end
-
       # TODO - This should also allow you to configure the adapter
       # Maybe we should allow people to pass in the client or whatever as well.
-      def client(content_type \\ :proto, base_url, middleware, adapter_opts) when is_binary(base_url) do
-        base_middleware = [
-          {Tesla.Middleware.BaseUrl, base_url},
-          {Tesla.Middleware.Headers, [{"Content-Type", Twirp.Encoder.type(content_type)}]},
+      def new(content_type, host_url, headers \\ []) when is_binary(host_url) do
+        headers = [
+          {"Content-Type", Twirp.Encoder.type(content_type)} | headers
         ]
 
-        default_adapter_opts = [
-          recv_timeout: 1_000,
-          pool: __MODULE__.Pool,
-          connect_timeout: 500
-        ]
+        service_url = "#{host_url}/#{unquote(service_path)}"
 
-        adapter_opts = Keyword.merge(default_adapter_opts, adapter_opts)
-                       # |> IO.inspect(label: "Adapter options")
-
-        Tesla.client(middleware ++ base_middleware, {Tesla.Adapter.Hackney, adapter_opts})
+        HTTP.new(service_url, headers)
       end
 
       def rpc(client, method, req, opts \\ []) do
         rpcdef = unquote(Macro.escape(rpc_map))[method]
 
         if rpcdef do
-          Twirp.Client.HTTP.call(
-            client,
-            unquote(service_path),
-            rpcdef,
-            req,
-            opts
-          )
+          Callable.call(client, rpcdef, req, opts)
         else
           {:error, Twirp.Error.bad_route("rpc not defined on this client")}
         end
