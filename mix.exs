@@ -43,9 +43,8 @@ defmodule Twirp.MixProject do
       {:plug, "~> 1.8"},
       {:norm, "~> 0.9"},
       {:jason, "~> 1.1"},
-      {:protobuf, "~> 0.5"},
-      {:google_protos, "~>0.1"},
       {:mojito, "~> 0.6"},
+      {:gpb, ">= 0.0.0"},
 
       {:credo, "~> 1.1", only: [:dev]},
       {:bypass, "~> 1.0", only: [:dev, :test]},

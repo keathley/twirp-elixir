@@ -47,6 +47,8 @@ defmodule Twirp.Plug do
       args
       |> Keyword.fetch!(:handler)
 
+    Code.ensure_loaded(handler)
+
     service_def =
       args
       |> Keyword.fetch!(:service)
@@ -206,6 +208,7 @@ defmodule Twirp.Plug do
           {:error, env, Error.internal(msg)}
       end
     else
+        IO.inspect([handler, env], label: "Env")
       {:error, env, Error.unimplemented("Handler function #{env.handler_fn} is not implemented")}
     end
   end
