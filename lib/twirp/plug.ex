@@ -47,6 +47,8 @@ defmodule Twirp.Plug do
       args
       |> Keyword.fetch!(:handler)
 
+    Code.ensure_loaded(handler)
+
     service_def =
       args
       |> Keyword.fetch!(:service)
@@ -74,6 +76,10 @@ defmodule Twirp.Plug do
   end
 
   def call(%{path_info: ["twirp", full_name, method]}=conn, {%{full_name: full_name}=service, handler, hooks}) do
+    call(%{conn | path_info: [full_name, method]}, {service, handler, hooks})
+  end
+
+  def call(%{path_info: [full_name, method]}=conn, {%{full_name: full_name}=service, handler, hooks}) do
     env = %{}
 
     try do
