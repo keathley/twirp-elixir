@@ -212,7 +212,7 @@ URL: `/rpc/hat/twirp/example.Haberdasher.MakeHat` or `/{prefix?}/twirp/{package}
 
 ```elixir
 defmodule ExampleWeb.Router do
-  use FlytroHealthWeb, :router
+  use ExampleWeb, :router
 
   scope "/rpc" do
     forward "/hat", Twirp.Plug, 
