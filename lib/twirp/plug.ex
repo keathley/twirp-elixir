@@ -35,7 +35,7 @@ defmodule Twirp.Plug do
     })
   end
 
-  def hook_result_s() do
+  def hook_result_s do
     alt(
       env: selection(env_s()),
       error: schema(%Twirp.Error{})
