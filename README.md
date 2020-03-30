@@ -131,10 +131,10 @@ defmodule Example.HaberdasherHandler do
   @names ["bowler", "baseball cap", "top hat", "derby"]
 
   def make_hat(_ctx, size) do
-    if size <= 0 do
+    if size.inches <= 0 do
       Twirp.Error.invalid_argument("I can't make a hat that small!")
     else
-      %Haberdasher.Hat{
+      %Example.Hat{
         inches: size.inches,
         color: Enum.random(@colors),
         name: Enum.random(@names)
@@ -158,9 +158,7 @@ definition with our handler.
 defmodule Example.Router do
   use Plug.Router
 
-  plug Twirp.Plug,
-    service: Haberdasher.HatMakerService,
-    handler: Haberdasher.HatMakerHandler
+  plug Twirp.Plug, service: Example.HaberdasherService, handler: Example.HaberdasherHandler
 end
 ```
 
@@ -194,6 +192,49 @@ defmodule AnotherService.GetHats do
 
   def make_a_hat(inches) do
     client = Client.client("http://localhost:4040", [])
+
+    case Client.make_hat(client, Size.new(inches: inches)) do
+      {:ok, %Hat{}=hat} ->
+        hat
+
+      {:error, %Twirp.Error{msg: msg}} ->
+        Logger.error(msg)
+    end
+  end
+end
+```
+
+### Running with Phoenix
+
+The plug can also be attached within a Phoenix Router. Example below would be accessible at `/rpc/hat` 
+
+URL: `/rpc/hat/twirp/example.Haberdasher.MakeHat` or `/{prefix?}/twirp/{package}.{service}/{method}`
+
+```elixir
+defmodule ExampleWeb.Router do
+  use ExampleWeb, :router
+
+  scope "/rpc" do
+    forward "/hat", Twirp.Plug, 
+      service: Example.HaberdasherService, handler: Example.HaberdasherHandler
+  end
+
+end
+```
+
+### Using the client 
+
+Client definitions are generated alongside the service definition. This allows
+you to generate clients for your services in other applications.  You can make
+RPC calls like so:
+
+```elixir
+defmodule AnotherService.GetHats do
+  alias Example.HaberdasherClient, as: Client
+  alias Example.{Size, Hat}
+
+  def make_a_hat(inches) do
+    client = Client.client("http://localhost:4000/rpc/hat", [])
 
     case Client.make_hat(client, Size.new(inches: inches)) do
       {:ok, %Hat{}=hat} ->
