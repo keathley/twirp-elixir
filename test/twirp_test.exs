@@ -41,31 +41,27 @@ defmodule TwirpTest do
     :ok
   end
 
-  setup do
-    client = Client.new(:proto, "http://localhost:4002", [])
-
-    {:ok, client: client}
-  end
-
-  test "clients can call services", %{client: client} do
+  test "clients can call services" do
+    {:ok, _} = start_supervised({Client, url: "http://localhost:4002"})
     req = Req.new(msg: "Hello there")
 
-    assert {:ok, %Resp{}=resp} = Client.echo(client, req)
+    assert {:ok, %Resp{}=resp} = Client.echo(req)
     assert resp.msg == "Hello there"
   end
 
   test "can call services with json" do
+    {:ok, _} = start_supervised({Client, url: "http://localhost:4002", content_type: :json})
     req = Req.new(msg: "Hello there")
 
-    client = Client.new(:json, "http://localhost:4002", [])
-    assert {:ok, %Resp{}=resp} = Client.echo(client, req)
+    assert {:ok, %Resp{}=resp} = Client.echo(req)
     assert resp.msg == "Hello there"
   end
 
-  test "users can specify deadlines", %{client: client} do
+  test "users can specify deadlines" do
+    {:ok, _} = start_supervised({Client, url: "http://localhost:4002"})
     req = Req.new(msg: "Hello there")
 
-    assert {:error, resp} = Client.slow_echo(client, req, timeout: 5)
+    assert {:error, resp} = Client.slow_echo(req, [], receive_timeout: 5)
     assert resp.code == :deadline_exceeded
     assert resp.meta.error_type == "timeout"
   end
