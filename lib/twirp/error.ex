@@ -36,6 +36,12 @@ defmodule Twirp.Error do
   @derive Jason.Encoder
   defstruct ~w|code msg meta|a
 
+  @type t :: %__MODULE__{
+    code: atom(),
+    msg: binary(),
+    meta: %{atom() => binary()}
+  }
+
   for code <- @error_codes do
     def unquote(code)(msg, meta \\ []) do
       new(unquote(code), msg, meta)

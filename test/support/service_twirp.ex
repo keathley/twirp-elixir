@@ -8,6 +8,7 @@ defmodule Twirp.Test.EchoService do
   service "Echo"
 
   rpc :Echo, Twirp.Test.Req, Twirp.Test.Resp, :echo
+
   rpc :SlowEcho, Twirp.Test.Req, Twirp.Test.Resp, :slow_echo
 end
 
@@ -16,6 +17,8 @@ defmodule Twirp.Test.EchoClient do
 
   @package "twirp.test"
   @service "Echo"
+
+  @type ctx :: map()
 
   def child_spec(opts) do
     %{
@@ -47,10 +50,19 @@ defmodule Twirp.Test.EchoClient do
     Twirp.Client.HTTP.start_link(name: __MODULE__, pools: pool_config)
   end
 
+  @doc """
+  Echo's some text back to you
+  """
+  @spec echo(ctx(), Twirp.Test.Req.t()) :: {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
   def echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
     rpc(:Echo, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
   end
 
+  @doc """
+  Echo's some text back to you, slowly.
+  """
+  @spec slow_echo(ctx(), Twirp.Test.Req.t()) ::
+          {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
   def slow_echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
     rpc(:SlowEcho, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
   end

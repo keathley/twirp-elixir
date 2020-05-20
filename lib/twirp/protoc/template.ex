@@ -7,7 +7,5 @@ defmodule Twirp.Protoc.Template do
 
   require EEx
 
-  EEx.function_from_file(:def, :service, @svc_tmpl, [:mod_name, :package, :service_name, :methods],
-    trim: true
-  )
+  EEx.function_from_file(:def, :service, @svc_tmpl, [:mod_name, :package, :service_name, :methods])
 end

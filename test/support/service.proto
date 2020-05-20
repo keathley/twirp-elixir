@@ -3,7 +3,8 @@ syntax = "proto3";
 package twirp.test;
 
 message Envelope {
-  string msg = 1;
+  string msg = 1; // Cannot be empty
+  // Child message
   Req sub = 2;
 }
 

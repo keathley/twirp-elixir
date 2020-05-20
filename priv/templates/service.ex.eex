@@ -18,6 +18,8 @@ defmodule <%= mod_name %>Client do
   @package "<%= package %>"
   @service "<%= service_name %>"
 
+  @type ctx :: map()
+
   def child_spec(opts) do
     %{
       id: __MODULE__,
@@ -48,6 +50,10 @@ defmodule <%= mod_name %>Client do
   end
 
   <%= Enum.map methods, fn method -> %>
+    @doc """
+    <%= method.comments %>
+    """
+    @spec <%= method.handler_fn %>(ctx(), <%= method.input %>.t()) :: {:ok, <%= method.output %>.t()} | {:error, Twirp.Error.t()}
     def <%= method.handler_fn %>(ctx \\ %{}, %<%= method.input %>{}=req) do
       rpc(:<%= method.name %>, ctx, req, <%= method.input %>, <%= method.output %>)
     end

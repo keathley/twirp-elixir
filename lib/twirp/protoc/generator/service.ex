@@ -20,7 +20,8 @@ defmodule Twirp.Protoc.Generator.Service do
     input = Util.type_from_type_name(ctx, m.input_type)
     output = Util.type_from_type_name(ctx, m.output_type)
     handler_fn = Macro.underscore(m.name)
+    comments = String.trim(m[:comments] || "")
 
-    %{name: m.name, input: input, output: output, handler_fn: handler_fn}
+    %{name: m.name, input: input, output: output, handler_fn: handler_fn, comments: comments}
   end
 end
