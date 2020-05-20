@@ -1,12 +1,10 @@
 defmodule TwirpTest do
   use ExUnit.Case, async: false
 
-  alias Twirp.TestService.{
-    Req,
-    Resp,
-    Client,
-    Service,
-  }
+  alias Twirp.Test.EchoService, as: Service
+  alias Twirp.Test.EchoClient, as: Client
+  alias Twirp.Test.Req
+  alias Twirp.Test.Resp
 
   defmodule Handler do
     def echo(_conn, %Req{msg: msg}) do

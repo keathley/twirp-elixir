@@ -3,11 +3,9 @@ defmodule Twirp.ClientTest do
 
   alias Twirp.Error
 
-  alias Twirp.TestService.{
-    Req,
-    Resp,
-    Client,
-  }
+  alias Twirp.Test.Req
+  alias Twirp.Test.Resp
+  alias Twirp.Test.EchoClient, as: Client
 
   setup tags do
     service = Bypass.open()
