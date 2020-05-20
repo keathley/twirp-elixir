@@ -13,5 +13,67 @@ end
 
 defmodule Twirp.Test.EchoClient do
   @moduledoc false
-  use Twirp.Client, service: Twirp.Test.EchoService
+
+  @package "twirp.test"
+  @service "Echo"
+
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]}
+    }
+  end
+
+  @doc """
+  Starts a new service client.
+
+  ## Options
+  * `:url` - The root url for the service.
+  * `:content_type` - Either `:proto` or `:json` based on the desired client type. Defaults to `:proto`.
+  * `:pool_config` - Configuration for the underlying Finch, http pool.
+  """
+  def start_link(opts) do
+    url = opts[:url] || raise ArgumentError, "#{__MODULE__} requires a `:url` option"
+    content_type = opts[:content_type] || :proto
+    full_path = Path.join([url, "twirp", "#{@package}.#{@service}"])
+    pool = opts[:pool_config] || [size: 10, count: 1]
+
+    pool_config = %{
+      default: pool
+    }
+
+    :persistent_term.put({__MODULE__, :url}, full_path)
+    :persistent_term.put({__MODULE__, :content_type}, content_type)
+    Twirp.Client.HTTP.start_link(name: __MODULE__, pools: pool_config)
+  end
+
+  def echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
+    rpc(:Echo, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
+  end
+
+  def slow_echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
+    rpc(:SlowEcho, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
+  end
+
+  defp rpc(method, ctx, req, input_type, output_type) do
+    service_url = :persistent_term.get({__MODULE__, :url})
+    content_type = Twirp.Encoder.type(:persistent_term.get({__MODULE__, :content_type}))
+    content_header = {"Content-Type", content_type}
+
+    ctx =
+      ctx
+      |> Map.put(:content_type, content_type)
+      |> Map.update(:headers, [content_header], &[content_header | &1])
+      |> Map.put_new(:deadline, 1_000)
+
+    rpcdef = %{
+      service_url: service_url,
+      method: method,
+      req: req,
+      input_type: input_type,
+      output_type: output_type
+    }
+
+    Twirp.Client.HTTP.call(__MODULE__, ctx, rpcdef)
+  end
 end

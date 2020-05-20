@@ -21,6 +21,6 @@ defmodule Twirp.Protoc.Generator.Service do
     output = Util.type_from_type_name(ctx, m.output_type)
     handler_fn = Macro.underscore(m.name)
 
-    ":#{m.name}, #{input}, #{output}, :#{handler_fn}"
+    %{name: m.name, input: input, output: output, handler_fn: handler_fn}
   end
 end
