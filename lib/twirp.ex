@@ -169,9 +169,7 @@ defmodule Twirp do
     alias Example.{Size, Hat}
 
     def make_a_hat(inches) do
-      client = Client.client("http://localhost:4040", [])
-
-      case Client.make_hat(client, Size.new(inches: inches)) do
+      case Client.make_hat(Size.new(inches: inches)) do
         {:ok, %Hat{}=hat} ->
           hat
 
@@ -181,8 +179,5 @@ defmodule Twirp do
     end
   end
   ```
-
-  Under the hood the client that Twirp generates is a Tesla client. This means that
-  you can re-use all of the existing Tesla middleware.
   """
 end
