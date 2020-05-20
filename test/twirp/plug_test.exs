@@ -17,7 +17,6 @@ defmodule Twirp.PlugTest do
     @moduledoc false
     use Protobuf, syntax: :proto3
 
-    @derive Jason.Encoder
     defstruct [:color]
 
     field :color, 2, type: :string
@@ -49,10 +48,6 @@ defmodule Twirp.PlugTest do
     def make_hat(_env, size) do
       size
     end
-  end
-
-  defmodule Client do
-    use Twirp.Client, service: Service
   end
 
   @opts Twirp.Plug.init([service: Service, handler: GoodHandler])

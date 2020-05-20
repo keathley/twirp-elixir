@@ -1,12 +1,10 @@
 defmodule TwirpTest do
   use ExUnit.Case, async: false
 
-  alias Twirp.TestService.{
-    Req,
-    Resp,
-    Client,
-    Service,
-  }
+  alias Twirp.Test.EchoService, as: Service
+  alias Twirp.Test.EchoClient, as: Client
+  alias Twirp.Test.Req
+  alias Twirp.Test.Resp
 
   defmodule Handler do
     def echo(_conn, %Req{msg: msg}) do
@@ -61,7 +59,7 @@ defmodule TwirpTest do
     {:ok, _} = start_supervised({Client, url: "http://localhost:4002"})
     req = Req.new(msg: "Hello there")
 
-    assert {:error, resp} = Client.slow_echo(req, [], receive_timeout: 5)
+    assert {:error, resp} = Client.slow_echo(%{deadline: 5}, req)
     assert resp.code == :deadline_exceeded
     assert resp.meta.error_type == "timeout"
   end

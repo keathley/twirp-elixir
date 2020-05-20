@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package twirp.test;
+
+message Envelope {
+  string msg = 1; // Cannot be empty
+  // Child message
+  Req sub = 2;
+}
+
+message Req {
+  string msg = 1;
+}
+
+message Resp {
+  string msg = 1;
+}
+
+service Echo {
+  // Echo's some text back to you
+  rpc Echo(Req) returns (Resp);
+
+  // Echo's some text back to you, slowly.
+  rpc SlowEcho(Req) returns (Resp);
+}

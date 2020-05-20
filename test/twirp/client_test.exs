@@ -3,11 +3,9 @@ defmodule Twirp.ClientTest do
 
   alias Twirp.Error
 
-  alias Twirp.TestService.{
-    Req,
-    Resp,
-    Client,
-  }
+  alias Twirp.Test.Req
+  alias Twirp.Test.Resp
+  alias Twirp.Test.EchoClient, as: Client
 
   setup tags do
     service = Bypass.open()
@@ -20,10 +18,6 @@ defmodule Twirp.ClientTest do
 
   test "generated clients have rpc functions defined on them" do
     assert {:echo, 2} in Client.__info__(:functions)
-  end
-
-  test "generated clients include a generic rpc function" do
-    assert {:rpc, 3} in Client.__info__(:functions)
   end
 
   test "makes an http call if the rpc is defined", %{service: service} do
@@ -39,7 +33,7 @@ defmodule Twirp.ClientTest do
       |> Plug.Conn.resp(200, body)
     end)
 
-    resp = Client.rpc(:Echo, Req.new(msg: "test"))
+    resp = Client.echo(Req.new(msg: "test"))
     assert {:ok, Resp.new(msg: "test")} == resp
   end
 
@@ -58,11 +52,6 @@ defmodule Twirp.ClientTest do
     assert {:ok, resp} = Client.echo(Req.new(msg: "Test"))
     assert match?(%Resp{}, resp)
     assert resp.msg == "Test"
-  end
-
-  test "if rpc is not defined return an error" do
-    {:error, resp} = Client.rpc(:Undefined, Req.new(msg: "test"))
-    assert match?(%Twirp.Error{code: :bad_route}, resp)
   end
 
   test "incorrect headers are returned", %{service: service} do

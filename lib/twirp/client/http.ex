@@ -6,21 +6,17 @@ defmodule Twirp.Client.HTTP do
   alias Twirp.Encoder
   alias Twirp.Error
 
-  @default_opts [timeout: 1_000]
-
-  defstruct [name: nil, service_url: nil, headers: []]
-
-  def new(name, url, headers) do
-    %__MODULE__{name: name, service_url: url, headers: headers}
+  def start_link(opts) do
+    Finch.start_link(opts)
   end
 
-  def call(client, rpcdef, req, opts) do
-    path            = "#{client.service_url}/#{rpcdef.method}"
-    content_type    = req_content_type(client)
-    encoded_payload = Encoder.encode(req, rpcdef.input, content_type)
-    opts            = Keyword.merge(@default_opts, opts)
+  def call(client, ctx, rpc) do
+    path            = "#{rpc.service_url}/#{rpc.method}"
+    content_type    = ctx.content_type
+    encoded_payload = Encoder.encode(rpc.req, rpc.input_type, content_type)
+    opts            = [receive_timeout: ctx.deadline]
 
-    case Finch.request(client.name, :post, path, client.headers, encoded_payload, opts) do
+    case Finch.request(client, :post, path, ctx.headers, encoded_payload, opts) do
       {:error, %{reason: :timeout}} ->
         meta = %{error_type: "timeout"}
         msg = "Deadline to receive data from the service was exceeded"
@@ -31,24 +27,24 @@ defmodule Twirp.Client.HTTP do
         {:error, Error.unavailable("Service is down", meta)}
 
       {:ok, %{status: status}=env} when status != 200 ->
-        {:error, build_error(env, rpcdef)}
+        {:error, build_error(env, rpc)}
 
       {:ok, %{status: 200}=env} ->
-        handle_success(env, rpcdef, content_type)
+        handle_success(env, rpc, content_type)
     end
   end
 
-  def handle_success(env, rpcdef, content_type) do
+  def handle_success(env, rpc, content_type) do
     resp_content_type = resp_header(env, "content-type")
 
     if resp_content_type && String.starts_with?(resp_content_type, content_type) do
-      Encoder.decode(env.body, rpcdef.output, content_type)
+      Encoder.decode(env.body, rpc.output_type, content_type)
     else
       {:error, Error.internal(~s|Expected response Content-Type "#{content_type}" but found #{resp_content_type || "nil"}|)}
     end
   end
 
-  def build_error(resp, _rpcdef) do
+  def build_error(resp, _rpc) do
     status = resp.status
 
     cond do
@@ -114,12 +110,5 @@ defmodule Twirp.Client.HTTP do
       _ ->
         nil
     end
-  end
-
-  defp req_content_type(client) do
-    client.headers
-    |> Enum.filter(fn {header, _} -> String.downcase(header) == "content-type" end)
-    |> Enum.map(fn {_, type} -> type end)
-    |> Enum.at(0)
   end
 end
