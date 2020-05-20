@@ -4,7 +4,6 @@ defmodule Twirp.Client do
   """
 
   alias Twirp.Client.HTTP
-  alias Twirp.Client.Callable
 
   defmacro __using__(opts) do
     quote do
@@ -29,11 +28,11 @@ defmodule Twirp.Client do
       Enum.map(rpcs, fn r ->
         quote do
           # TODO - Clean up this pattern match / error handling
-          def unquote(r.handler_fn)(client, %unquote(r.input){}=req, opts \\ []) do
+          def unquote(r.handler_fn)(%unquote(r.input){}=req, headers \\ [], opts \\ []) do
             rpc(
-              client,
               unquote(r.method),
               req,
+              headers,
               opts
             )
           end
@@ -41,23 +40,41 @@ defmodule Twirp.Client do
       end)
 
     quote do
-      # TODO - This should also allow you to configure the adapter
-      # Maybe we should allow people to pass in the client or whatever as well.
-      def new(content_type, host_url, headers \\ []) when is_binary(host_url) do
-        headers = [
+
+      def child_spec(opts) do
+        %{
+          id: __MODULE__,
+          start: {__MODULE__, :start_link, [opts]}
+        }
+      end
+
+      def start_link(opts) do
+        url = opts[:url] || raise ArgumentError, "Twirp Client requires a `:url` option"
+        content_type = opts[:content_type] || :proto
+
+        # TODO - Make pool configuration optional
+        pool_config = %{
+          default: [size: 10, count: 1]
+        }
+
+        :persistent_term.put({__MODULE__, :url}, url)
+        :persistent_term.put({__MODULE__, :content_type}, content_type)
+        Finch.start_link(name: __MODULE__, pools: pool_config)
+      end
+
+      def rpc(method, req, headers \\ [], opts \\ []) do
+        rpcdef       = unquote(Macro.escape(rpc_map))[method]
+        url          = :persistent_term.get({__MODULE__, :url})
+        content_type = :persistent_term.get({__MODULE__, :content_type})
+        service_url  = "#{url}/#{unquote(service_path)}"
+        headers      = [
           {"Content-Type", Twirp.Encoder.type(content_type)} | headers
         ]
 
-        service_url = "#{host_url}/#{unquote(service_path)}"
-
-        HTTP.new(service_url, headers)
-      end
-
-      def rpc(client, method, req, opts \\ []) do
-        rpcdef = unquote(Macro.escape(rpc_map))[method]
+        client = HTTP.new(__MODULE__, service_url, headers)
 
         if rpcdef do
-          Callable.call(client, rpcdef, req, opts)
+          HTTP.call(client, rpcdef, req, opts)
         else
           {:error, Twirp.Error.bad_route("rpc not defined on this client")}
         end
