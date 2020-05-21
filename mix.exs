@@ -46,6 +46,7 @@ defmodule Twirp.MixProject do
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},
       {:finch, "~> 0.2"},
+      {:telemetry, "~> 0.4"},
 
       {:credo, "~> 1.1", only: [:dev]},
       {:bypass, "~> 1.0", only: [:dev, :test]},
