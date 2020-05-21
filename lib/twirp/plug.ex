@@ -14,11 +14,11 @@ defmodule Twirp.Plug do
     handler: MyHandler,
   ```
   """
-
   @content_type "content-type"
 
   alias Twirp.Encoder
   alias Twirp.Error
+  alias Twirp.Telemetry
 
   import Plug.Conn
   import Norm
@@ -81,6 +81,9 @@ defmodule Twirp.Plug do
 
   def call(%{path_info: [full_name, method]}=conn, {%{full_name: full_name}=service, handler, hooks}) do
     env = %{}
+    metadata = %{
+    }
+    start = Telemetry.start(:call, metadata)
 
     try do
       with {:ok, env} <- validate_req(conn, method, service),
@@ -95,12 +98,28 @@ defmodule Twirp.Plug do
         env = Map.put(env, :output, resp)
         call_on_success_hooks(env, hooks)
 
+        conn =
+          conn
+          |> put_resp_content_type(env.content_type)
+          |> send_resp(200, resp)
+          |> halt()
+
+        metadata =
+          metadata
+          |> Map.put(:content_type, env.content_type)
+          |> Map.put(:method, env.method_name)
+
+        Telemetry.stop(:call, start, metadata)
+
         conn
-        |> put_resp_content_type(env.content_type)
-        |> send_resp(200, resp)
-        |> halt()
       else
         {:error, env, error} ->
+          metadata =
+            metadata
+            |> Map.put(:content_type, env.content_type)
+            |> Map.put(:method, env.method_name)
+            |> Map.put(:error, error)
+          Telemetry.stop(:call, start, metadata)
           call_on_error_hooks(hooks, env, error)
           send_error(conn, error)
       end
@@ -108,10 +127,12 @@ defmodule Twirp.Plug do
       exception ->
         try do
           call_on_exception_hooks(hooks, env, exception)
+          Telemetry.exception(:response, start, :error, exception, __STACKTRACE__, metadata)
           error = Error.internal(Exception.message(exception))
           send_error(conn, error)
         rescue
           hook_e ->
+            Telemetry.exception(:response, start, :error, hook_e, __STACKTRACE__, metadata)
             error = Error.internal(Exception.message(hook_e))
             send_error(conn, error)
         end

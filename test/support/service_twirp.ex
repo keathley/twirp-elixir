@@ -86,6 +86,23 @@ defmodule Twirp.Test.EchoClient do
       output_type: output_type
     }
 
-    Twirp.Client.HTTP.call(__MODULE__, ctx, rpcdef)
+    metadata = %{
+      client: __MODULE__,
+      method: method,
+      service: service_url
+    }
+
+    start = Twirp.Telemetry.start(:rpc, metadata)
+
+    case Twirp.Client.HTTP.call(__MODULE__, ctx, rpcdef) do
+      {:ok, resp} ->
+        Twirp.Telemetry.stop(:rpc, start, metadata)
+        {:ok, resp}
+
+      {:error, error} ->
+        metadata = Map.put(metadata, :error, error)
+        Twirp.Telemetry.stop(:rpc, start, metadata)
+        {:error, error}
+    end
   end
 end
