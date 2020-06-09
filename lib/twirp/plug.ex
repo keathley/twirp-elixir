@@ -98,11 +98,6 @@ defmodule Twirp.Plug do
         env = Map.put(env, :output, resp)
         call_on_success_hooks(env, hooks)
 
-        conn =
-          conn
-          |> put_resp_content_type(env.content_type)
-          |> send_resp(200, resp)
-          |> halt()
 
         metadata =
           metadata
@@ -112,6 +107,9 @@ defmodule Twirp.Plug do
         Telemetry.stop(:call, start, metadata)
 
         conn
+        |> put_resp_content_type(env.content_type)
+        |> send_resp(200, resp)
+        |> halt()
       else
         {:error, env, error} ->
           metadata =
