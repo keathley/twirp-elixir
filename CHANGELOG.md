@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.4.1
+
+* Fix bug with producing stop telemetry.
+
+## 0.4.0
+
 ## 0.3.1 (December 05, 2019)
 
 * [ccd8fc5](https://github.com/keathley/twirp/commit/ccd8fc5637eb03e8bf40d84e2c956bb6cd35d274) Strip struct before encoding as JSON. - Jeffery Utter
