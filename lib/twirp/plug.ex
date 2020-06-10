@@ -98,7 +98,6 @@ defmodule Twirp.Plug do
         env = Map.put(env, :output, resp)
         call_on_success_hooks(env, hooks)
 
-
         metadata =
           metadata
           |> Map.put(:content_type, env.content_type)
