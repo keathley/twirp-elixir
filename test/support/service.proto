@@ -22,4 +22,6 @@ service Echo {
 
   // Echo's some text back to you, slowly.
   rpc SlowEcho(Req) returns (Resp);
+
+  rpc Undocumented(Req) returns (Resp);
 }
