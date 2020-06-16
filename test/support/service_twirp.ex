@@ -10,10 +10,14 @@ defmodule Twirp.Test.EchoService do
   rpc :Echo, Twirp.Test.Req, Twirp.Test.Resp, :echo
 
   rpc :SlowEcho, Twirp.Test.Req, Twirp.Test.Resp, :slow_echo
+
+  rpc :Undocumented, Twirp.Test.Req, Twirp.Test.Resp, :undocumented
 end
 
 defmodule Twirp.Test.EchoClient do
-  @moduledoc false
+  @moduledoc """
+  Generated Twirp Client
+  """
 
   @package "twirp.test"
   @service "Echo"
@@ -65,6 +69,12 @@ defmodule Twirp.Test.EchoClient do
           {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
   def slow_echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
     rpc(:SlowEcho, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
+  end
+
+  @spec undocumented(ctx(), Twirp.Test.Req.t()) ::
+          {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
+  def undocumented(ctx \\ %{}, %Twirp.Test.Req{} = req) do
+    rpc(:Undocumented, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
   end
 
   defp rpc(method, ctx, req, input_type, output_type) do

@@ -13,7 +13,9 @@ defmodule <%= mod_name %>Service do
 end
 
 defmodule <%= mod_name %>Client do
-  @moduledoc false
+  @moduledoc """
+  Generated Twirp Client
+  """
 
   @package "<%= package %>"
   @service "<%= service_name %>"
@@ -50,9 +52,10 @@ defmodule <%= mod_name %>Client do
   end
 
   <%= Enum.map methods, fn method -> %>
+    <%= if method.comments != "" do %>
     @doc """
     <%= method.comments %>
-    """
+    """<% end %>
     @spec <%= method.handler_fn %>(ctx(), <%= method.input %>.t()) :: {:ok, <%= method.output %>.t()} | {:error, Twirp.Error.t()}
     def <%= method.handler_fn %>(ctx \\ %{}, %<%= method.input %>{}=req) do
       rpc(:<%= method.name %>, ctx, req, <%= method.input %>, <%= method.output %>)
