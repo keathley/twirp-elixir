@@ -45,7 +45,7 @@ defmodule Twirp.MixProject do
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},
-      {:finch, "~> 0.2"},
+      {:finch, "~> 0.3"},
       {:telemetry, "~> 0.4"},
 
       {:credo, "~> 1.1", only: [:dev]},

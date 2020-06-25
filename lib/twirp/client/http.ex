@@ -15,8 +15,9 @@ defmodule Twirp.Client.HTTP do
     content_type    = ctx.content_type
     encoded_payload = Encoder.encode(rpc.req, rpc.input_type, content_type)
     opts            = [receive_timeout: ctx.deadline]
+    request         = Finch.build(:post, path, ctx.headers, encoded_payload)
 
-    case Finch.request(client, :post, path, ctx.headers, encoded_payload, opts) do
+    case Finch.request(request, client, opts) do
       {:error, %{reason: :timeout}} ->
         meta = %{error_type: "timeout"}
         msg = "Deadline to receive data from the service was exceeded"
