@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.5.0
+
+* Convert twirp errors to exceptions
+* Improve client to use latest finch
+
 ## 0.4.1
 
 * Fix bug with producing stop telemetry.
