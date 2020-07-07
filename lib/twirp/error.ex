@@ -34,7 +34,7 @@ defmodule Twirp.Error do
   @error_code_strings for code <- @error_codes, do: Atom.to_string(code)
 
   @derive Jason.Encoder
-  defstruct ~w|code msg meta|a
+  defexception ~w|code msg meta|a
 
   @type t :: %__MODULE__{
     code: atom(),
@@ -66,4 +66,7 @@ defmodule Twirp.Error do
   def new(code, msg, meta \\ []) do
     conform!(%__MODULE__{code: code, msg: msg, meta: Enum.into(meta, %{})}, s())
   end
+
+  @impl true
+  def message(%__MODULE__{msg: msg}), do: msg
 end
