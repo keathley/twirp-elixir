@@ -22,6 +22,10 @@ defmodule <%= mod_name %>Client do
 
   @type ctx :: map()
 
+  <%= Enum.map methods, fn method -> %>
+      @callback <%= method.handler_fn %>(ctx(), <%= method.input %>.t()) :: {:ok, <%= method.output %>.t()} | {:error, Twirp.Error.t()}
+  <% end %>
+
   def child_spec(opts) do
     %{
       id: __MODULE__,
