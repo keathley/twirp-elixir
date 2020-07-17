@@ -24,6 +24,15 @@ defmodule Twirp.Test.EchoClient do
 
   @type ctx :: map()
 
+  @callback echo(ctx(), Twirp.Test.Req.t()) ::
+              {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
+
+  @callback slow_echo(ctx(), Twirp.Test.Req.t()) ::
+              {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
+
+  @callback undocumented(ctx(), Twirp.Test.Req.t()) ::
+              {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
+
   def child_spec(opts) do
     %{
       id: __MODULE__,
