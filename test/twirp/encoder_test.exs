@@ -9,6 +9,11 @@ defmodule Twirp.EncoderTest do
     test "converts json to protobuf" do
       assert {:ok, %Req{msg: "test"}} = Encoder.decode(%{msg: "test"}, Req, "application/json")
     end
+
+    test "converts nested string fields" do
+      assert {:ok, %Envelope{msg: "test", sub: %Req{msg: "test"}}} ==
+        Encoder.decode(%{"msg" => "test", "sub" => %{"msg" => "test"}}, Envelope, "application/json")
+    end
   end
 
   describe "encode/3 as json " do
