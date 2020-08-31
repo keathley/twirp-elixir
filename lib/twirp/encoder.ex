@@ -32,19 +32,19 @@ defmodule Twirp.Encoder do
         {:error, e}
     end
   end
-  def decode(map, input, @json <> _) do
-    map_with_atoms =
-      map
-      |> Enum.map(fn {key, v} ->
-        k = if is_binary(key), do: String.to_existing_atom(key), else: key
-        {k, v}
-      end)
-      |> Enum.into(%{})
 
-    {:ok, input.new(map_with_atoms)}
-  rescue
-    e ->
-      {:error, e}
+  def decode(map, input, @json <> _) do
+    case Jason.encode(map) do
+      {:ok, bytes} ->
+        decode(bytes, input, @json)
+
+      {:error, e} ->
+        {:error, e}
+    end
+
+    rescue
+      e ->
+        {:error, e}
   end
 
   def decode(bytes, input, @proto <> _) do
