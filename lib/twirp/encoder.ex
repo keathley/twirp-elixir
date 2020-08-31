@@ -33,15 +33,12 @@ defmodule Twirp.Encoder do
     end
   end
   def decode(map, input, @json <> _) do
-    map_with_atoms =
+    struct =
       map
-      |> Enum.map(fn {key, v} ->
-        k = if is_binary(key), do: String.to_existing_atom(key), else: key
-        {k, v}
-      end)
-      |> Enum.into(%{})
+      |> to_atom_keys
+      |> input.new
 
-    {:ok, input.new(map_with_atoms)}
+    {:ok, struct}
   rescue
     e ->
       {:error, e}
@@ -77,4 +74,13 @@ defmodule Twirp.Encoder do
   end
 
   defp strip_structs(any), do: any
+
+  defp to_atom_keys(map) when is_map(map) do
+    for {key, value} <- map, into: %{} do
+      k = if is_binary(key), do: String.to_existing_atom(key), else: key
+      v = to_atom_keys(value)
+      {k, v}
+    end
+  end
+  defp to_atom_keys(other), do: other
 end
