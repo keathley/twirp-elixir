@@ -124,12 +124,12 @@ defmodule Twirp.Plug do
       exception ->
         try do
           call_on_exception_hooks(hooks, env, exception)
-          Telemetry.exception(:response, start, :error, exception, __STACKTRACE__, metadata)
+          Telemetry.exception(:call, start, :error, exception, __STACKTRACE__, metadata)
           error = Error.internal(Exception.message(exception))
           send_error(conn, error)
         rescue
           hook_e ->
-            Telemetry.exception(:response, start, :error, hook_e, __STACKTRACE__, metadata)
+            Telemetry.exception(:call, start, :error, hook_e, __STACKTRACE__, metadata)
             error = Error.internal(Exception.message(hook_e))
             send_error(conn, error)
         end
