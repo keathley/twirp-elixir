@@ -35,7 +35,7 @@ defmodule Twirp.Client.HTTP do
     end
   end
 
-  def handle_success(env, rpc, content_type) do
+  defp handle_success(env, rpc, content_type) do
     resp_content_type = resp_header(env, "content-type")
 
     if resp_content_type && String.starts_with?(resp_content_type, content_type) do
@@ -45,7 +45,7 @@ defmodule Twirp.Client.HTTP do
     end
   end
 
-  def build_error(resp, _rpc) do
+  defp build_error(resp, _rpc) do
     status = resp.status
 
     cond do

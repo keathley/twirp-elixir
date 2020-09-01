@@ -52,6 +52,7 @@ defmodule Twirp.Test.EchoClient do
     url = opts[:url] || raise ArgumentError, "#{__MODULE__} requires a `:url` option"
     content_type = opts[:content_type] || :proto
     full_path = Path.join([url, "twirp", "#{@package}.#{@service}"])
+    interceptors = opts[:interceptors] || []
     pool = opts[:pool_config] || [size: 10, count: 1]
 
     pool_config = %{
@@ -60,6 +61,7 @@ defmodule Twirp.Test.EchoClient do
 
     :persistent_term.put({__MODULE__, :url}, full_path)
     :persistent_term.put({__MODULE__, :content_type}, content_type)
+    :persistent_term.put({__MODULE__, :interceptors}, interceptors)
     Twirp.Client.HTTP.start_link(name: __MODULE__, pools: pool_config)
   end
 
@@ -88,6 +90,7 @@ defmodule Twirp.Test.EchoClient do
 
   defp rpc(method, ctx, req, input_type, output_type) do
     service_url = :persistent_term.get({__MODULE__, :url})
+    interceptors = :persistent_term.get({__MODULE__, :interceptors})
     content_type = Twirp.Encoder.type(:persistent_term.get({__MODULE__, :content_type}))
     content_header = {"Content-Type", content_type}
 
@@ -113,15 +116,30 @@ defmodule Twirp.Test.EchoClient do
 
     start = Twirp.Telemetry.start(:rpc, metadata)
 
-    case Twirp.Client.HTTP.call(__MODULE__, ctx, rpcdef) do
-      {:ok, resp} ->
-        Twirp.Telemetry.stop(:rpc, start, metadata)
-        {:ok, resp}
+    call_chain =
+      chain(Enum.reverse(interceptors), fn ctx, req ->
+        case Twirp.Client.HTTP.call(__MODULE__, ctx, %{rpcdef | req: req}) do
+          {:ok, resp} ->
+            Twirp.Telemetry.stop(:rpc, start, metadata)
+            {:ok, resp}
 
-      {:error, error} ->
-        metadata = Map.put(metadata, :error, error)
-        Twirp.Telemetry.stop(:rpc, start, metadata)
-        {:error, error}
+          {:error, error} ->
+            metadata = Map.put(metadata, :error, error)
+            Twirp.Telemetry.stop(:rpc, start, metadata)
+            {:error, error}
+        end
+      end)
+
+    call_chain.(ctx, req)
+  end
+
+  defp chain([], f), do: f
+
+  defp chain([func | fs], acc_f) do
+    next = fn ctx, req ->
+      func.(ctx, req, acc_f)
     end
+
+    chain(fs, next)
   end
 end
