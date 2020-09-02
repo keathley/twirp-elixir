@@ -363,6 +363,35 @@ defmodule Twirp.PlugTest do
       req = proto_req("MakeHat", Size.new(inches: 10))
       _conn = call(req, opts)
     end
+
+    test "returns the most recent env" do
+      us = self()
+
+      first = fn _conn, env ->
+        Map.put(env, :test, "This is a test")
+      end
+      second = fn _conn, _env ->
+        Twirp.Error.permission_denied("Bail out")
+      end
+
+      error = fn env, error ->
+        assert error == Twirp.Error.permission_denied("Bail out")
+        assert env.test == "This is a test"
+
+        send us, :done
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: GoodHandler,
+        before: [first, second],
+        on_error: [error]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      _conn = call(req, opts)
+
+      assert_receive :done
+    end
   end
 
   describe "on_success hooks" do
@@ -412,6 +441,34 @@ defmodule Twirp.PlugTest do
       assert conn.status == 403
       error = Jason.decode!(conn.resp_body)
       assert error["code"] == "permission_denied"
+    end
+
+    test "are called if there was an exception" do
+      defmodule ExceptionToErrorHandler do
+        def make_hat(_, _) do
+          raise ArgumentError, "Boom!"
+        end
+      end
+
+      us = self()
+
+      on_error = fn _env, error ->
+        assert error == Twirp.Error.internal("Boom!")
+        send us, :done
+      end
+
+      opts = Twirp.Plug.init [
+        service: Service,
+        handler: ExceptionToErrorHandler,
+        on_error: [on_error]
+      ]
+      req = proto_req("MakeHat", Size.new(inches: 10))
+      conn = call(req, opts)
+      assert_receive :done
+
+      assert conn.status == 500
+      error = Jason.decode!(conn.resp_body)
+      assert error["code"] == "internal"
     end
   end
 
@@ -477,16 +534,6 @@ defmodule Twirp.PlugTest do
         on_exception: [exception_hook],
       ]
       req = proto_req("MakeHat", Size.new(inches: 10))
-      _conn = call(req, opts)
-      assert_receive :done
-
-      opts = Twirp.Plug.init [
-        service: Service,
-        handler: GoodHandler,
-        on_error: [bad_hook],
-        on_exception: [exception_hook],
-      ]
-      req = proto_req("MakeHat", Size.new(inches: -10))
       _conn = call(req, opts)
       assert_receive :done
     end
