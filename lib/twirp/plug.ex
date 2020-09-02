@@ -126,11 +126,13 @@ defmodule Twirp.Plug do
           call_on_exception_hooks(hooks, env, exception)
           Telemetry.exception(:call, start, :error, exception, __STACKTRACE__, metadata)
           error = Error.internal(Exception.message(exception))
+          call_on_error_hooks(hooks, env, error)
           send_error(conn, error)
         rescue
           hook_e ->
             Telemetry.exception(:call, start, :error, hook_e, __STACKTRACE__, metadata)
             error = Error.internal(Exception.message(hook_e))
+            call_on_error_hooks(hooks, env, error)
             send_error(conn, error)
         end
     end
@@ -239,13 +241,13 @@ defmodule Twirp.Plug do
       result = f.(conn, updated_env)
 
       case conform!(result, hook_result_s()) do
-        {:error, err} -> {:halt, {:error, err}}
+        {:error, err} -> {:halt, {:error, updated_env, err}}
         {:env, next_env} -> {:cont, next_env}
       end
     end)
 
     case result do
-      {:error, err} ->
+      {:error, env, err} ->
         {:error, env, err}
 
       env ->
