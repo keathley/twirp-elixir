@@ -9,6 +9,8 @@ defmodule Twirp.Test.EchoService do
 
   rpc :Echo, Twirp.Test.Req, Twirp.Test.Resp, :echo
 
+  rpc :BatchEcho, Twirp.Test.BatchReq, Twirp.Test.BatchResp, :batch_echo
+
   rpc :SlowEcho, Twirp.Test.Req, Twirp.Test.Resp, :slow_echo
 
   rpc :Undocumented, Twirp.Test.Req, Twirp.Test.Resp, :undocumented
@@ -26,6 +28,9 @@ defmodule Twirp.Test.EchoClient do
 
   @callback echo(ctx(), Twirp.Test.Req.t()) ::
               {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
+
+  @callback batch_echo(ctx(), Twirp.Test.BatchReq.t()) ::
+              {:ok, Twirp.Test.BatchResp.t()} | {:error, Twirp.Error.t()}
 
   @callback slow_echo(ctx(), Twirp.Test.Req.t()) ::
               {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
@@ -71,6 +76,12 @@ defmodule Twirp.Test.EchoClient do
   @spec echo(ctx(), Twirp.Test.Req.t()) :: {:ok, Twirp.Test.Resp.t()} | {:error, Twirp.Error.t()}
   def echo(ctx \\ %{}, %Twirp.Test.Req{} = req) do
     rpc(:Echo, ctx, req, Twirp.Test.Req, Twirp.Test.Resp)
+  end
+
+  @spec batch_echo(ctx(), Twirp.Test.BatchReq.t()) ::
+          {:ok, Twirp.Test.BatchResp.t()} | {:error, Twirp.Error.t()}
+  def batch_echo(ctx \\ %{}, %Twirp.Test.BatchReq{} = req) do
+    rpc(:BatchEcho, ctx, req, Twirp.Test.BatchReq, Twirp.Test.BatchResp)
   end
 
   @doc """

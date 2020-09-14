@@ -16,9 +16,19 @@ message Resp {
   string msg = 1;
 }
 
+message BatchReq {
+  repeated Req requests = 1;
+}
+
+message BatchResp {
+  repeated Resp responses = 1;
+}
+
 service Echo {
   // Echo's some text back to you
   rpc Echo(Req) returns (Resp);
+
+  rpc BatchEcho(BatchReq) returns (BatchResp);
 
   // Echo's some text back to you, slowly.
   rpc SlowEcho(Req) returns (Resp);
