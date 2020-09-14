@@ -1,5 +1,6 @@
 defmodule Twirp.Encoder do
   @moduledoc false
+
   # Encodes and Decodes messages based on the requests content-type header.
   # For json we delegate to Jason. for protobuf responses we use the input or
   # output types.
@@ -32,6 +33,7 @@ defmodule Twirp.Encoder do
         {:error, e}
     end
   end
+
   def decode(map, input, @json <> _) do
     struct =
       map
@@ -60,17 +62,21 @@ defmodule Twirp.Encoder do
   def encode(payload, _output, @json <> _) do
     payload
     |> strip_structs()
-    |> Jason.encode!
+    |> Jason.encode!()
   end
 
   def encode(payload, output, @proto <> _) do
     output.encode(payload)
   end
 
+  defp strip_structs(list) when is_list(list) do
+    Enum.map(list, &strip_structs/1)
+  end
+
   defp strip_structs(map) when is_map(map) do
     map
     |> Map.drop([:__struct__])
-    |> Enum.into(%{}, fn {k,v} -> {k, strip_structs(v)} end)
+    |> Enum.into(%{}, fn {k, v} -> {k, strip_structs(v)} end)
   end
 
   defp strip_structs(any), do: any
