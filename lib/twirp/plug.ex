@@ -47,7 +47,7 @@ defmodule Twirp.Plug do
       args
       |> Keyword.fetch!(:handler)
 
-    Code.ensure_loaded(handler)
+    Code.ensure_compiled(handler)
 
     service_def =
       args
