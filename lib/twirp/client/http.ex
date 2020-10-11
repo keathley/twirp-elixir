@@ -23,9 +23,13 @@ defmodule Twirp.Client.HTTP do
         msg = "Deadline to receive data from the service was exceeded"
         {:error, Error.deadline_exceeded(msg, meta)}
 
-      {:error, %Mint.TransportError{reason: reason}} ->
+      {:error, %{reason: reason}} ->
         meta = %{error_type: "#{reason}"}
         {:error, Error.unavailable("Service is down", meta)}
+
+      {:error, e} ->
+        meta = %{error_type: "#{inspect e}"}
+        {:error, Error.internal("Unhandled client error", meta)}
 
       {:ok, %{status: status}=env} when status != 200 ->
         {:error, build_error(env, rpc)}
