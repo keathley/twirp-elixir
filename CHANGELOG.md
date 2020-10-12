@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.7.3
+* Gracefully handle all client errors
+
 ## 0.5.0
 
 * Convert twirp errors to exceptions
