@@ -6,6 +6,7 @@ defmodule Twirp.Test.Envelope do
           msg: String.t(),
           sub: Twirp.Test.Req.t() | nil
         }
+
   defstruct [:msg, :sub]
 
   field :msg, 1, type: :string
@@ -19,6 +20,7 @@ defmodule Twirp.Test.Req do
   @type t :: %__MODULE__{
           msg: String.t()
         }
+
   defstruct [:msg]
 
   field :msg, 1, type: :string
@@ -31,6 +33,7 @@ defmodule Twirp.Test.Resp do
   @type t :: %__MODULE__{
           msg: String.t()
         }
+
   defstruct [:msg]
 
   field :msg, 1, type: :string
@@ -43,6 +46,7 @@ defmodule Twirp.Test.BatchReq do
   @type t :: %__MODULE__{
           requests: [Twirp.Test.Req.t()]
         }
+
   defstruct [:requests]
 
   field :requests, 1, repeated: true, type: Twirp.Test.Req
@@ -55,6 +59,7 @@ defmodule Twirp.Test.BatchResp do
   @type t :: %__MODULE__{
           responses: [Twirp.Test.Resp.t()]
         }
+
   defstruct [:responses]
 
   field :responses, 1, repeated: true, type: Twirp.Test.Resp

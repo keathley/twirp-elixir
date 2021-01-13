@@ -58,16 +58,20 @@ defmodule Twirp.Test.EchoClient do
     content_type = opts[:content_type] || :proto
     full_path = Path.join([url, "twirp", "#{@package}.#{@service}"])
     interceptors = opts[:interceptors] || []
-    pool = opts[:pool_config] || [size: 10, count: 1]
 
-    pool_config = %{
-      default: pool
+    {adapter_mod, adapter_opts} =
+      opts[:adapter] || {Twirp.Client.Finch, pools: %{default: [size: 10, count: 1]}}
+
+    http_opts = %{
+      name: __MODULE__,
+      opts: adapter_opts
     }
 
     :persistent_term.put({__MODULE__, :url}, full_path)
     :persistent_term.put({__MODULE__, :content_type}, content_type)
     :persistent_term.put({__MODULE__, :interceptors}, interceptors)
-    Twirp.Client.HTTP.start_link(name: __MODULE__, pools: pool_config)
+    :persistent_term.put({__MODULE__, :adapter}, {adapter_mod, adapter_opts})
+    Twirp.Client.HTTP.start_link(adapter_mod, http_opts)
   end
 
   @doc """
@@ -102,6 +106,7 @@ defmodule Twirp.Test.EchoClient do
   defp rpc(method, ctx, req, input_type, output_type) do
     service_url = :persistent_term.get({__MODULE__, :url})
     interceptors = :persistent_term.get({__MODULE__, :interceptors})
+    {adapter_mod, _} = :persistent_term.get({__MODULE__, :adapter})
     content_type = Twirp.Encoder.type(:persistent_term.get({__MODULE__, :content_type}))
     content_header = {"Content-Type", content_type}
 
@@ -129,7 +134,7 @@ defmodule Twirp.Test.EchoClient do
 
     call_chain =
       chain(Enum.reverse(interceptors), fn ctx, req ->
-        case Twirp.Client.HTTP.call(__MODULE__, ctx, %{rpcdef | req: req}) do
+        case Twirp.Client.HTTP.call(adapter_mod, __MODULE__, ctx, %{rpcdef | req: req}) do
           {:ok, resp} ->
             Twirp.Telemetry.stop(:rpc, start, metadata)
             {:ok, resp}
