@@ -116,7 +116,7 @@ end
 
 defmodule Example.HaberdasherClient do
   @moduledoc false
-  use Twirp.Client, service: Example.HaberdasherService
+  # client implementation...
 end
 ```
 
@@ -216,8 +216,20 @@ defmodule ExampleWeb.Router do
     forward "/hat", Twirp.Plug,
       service: Example.HaberdasherService, handler: Example.HaberdasherHandler
   end
-
 end
+```
+
+### Client adapters
+
+Twirp supports either Finch or Hackney as the underlying http client. Finch is the
+default. If you want to configure the adapter you can pass the `adapter` option
+when you call `start_link`.
+
+```elixir
+Client.start_link(
+  url: "https://some.url",
+  adapter: {Twirp.Client.Hackney, [pool_opts: [timeout: 30_000, max_connections: 100]]}
+)
 ```
 
 ## Should I use this?
