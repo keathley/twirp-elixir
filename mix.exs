@@ -14,6 +14,14 @@ defmodule Twirp.MixProject do
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
 
+      xref: [
+        exclude: [
+          Finch,
+          :hackney,
+          :hackney_pool,
+        ]
+      ],
+
       description: description(),
       package: package(),
       name: "Twirp",
@@ -45,7 +53,8 @@ defmodule Twirp.MixProject do
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.5"},
       {:google_protos, "~>0.1"},
-      {:finch, "~> 0.3"},
+      {:finch, "~> 0.3", optional: true},
+      {:hackney, "~> 1.17", optional: true},
       {:telemetry, "~> 0.4"},
 
       {:credo, "~> 1.1", only: [:dev]},

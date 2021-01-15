@@ -1,17 +1,39 @@
-defmodule Twirp.ClientTest do
+defmodule Twirp.Client.HackneyTest do
   use ExUnit.Case, async: false
 
   alias Twirp.Error
 
   alias Twirp.Test.Req
   alias Twirp.Test.Resp
-  alias Twirp.Test.EchoClient, as: Client
+  # alias Twirp.Test.EchoClient, as: Client
+
+  defmodule Client do
+    # We need a facade for testing purposes. In a real system this module is
+    # not needed.
+
+    def child_spec(opts) do
+      %{
+        id: __MODULE__,
+        start: {__MODULE__, :start_link, [opts]}
+      }
+    end
+
+    def start_link(opts) do
+      adapter = [adapter: {Twirp.Client.Hackney, []}]
+      opts = Keyword.merge(adapter, opts)
+      Twirp.Test.EchoClient.start_link(opts)
+    end
+
+    def echo(ctx \\ %{}, req), do: Twirp.Test.EchoClient.echo(ctx, req)
+
+    def slow_echo(ctx \\ %{}, req), do: Twirp.Test.EchoClient.slow_echo(ctx, req)
+  end
 
   setup tags do
     service = Bypass.open()
     base_url = "http://localhost:#{service.port}"
     content_type = tags[:client_type] || :proto
-    {:ok, _} = start_supervised({Client, url: base_url, content_type: content_type})
+    start_supervised({Client, url: base_url, content_type: content_type})
 
     {:ok, service: service}
   end
@@ -130,6 +152,23 @@ defmodule Twirp.ClientTest do
     assert match?(%Error{code: :internal}, resp)
     assert resp.meta.http_error_from_intermediary == "true"
     assert resp.meta.not_a_twirp_error_because == "Redirects not allowed on Twirp requests"
+  end
+
+  test "connect timeouts", %{service: _service} do
+    assert {:error, resp} = Client.echo(%{connect_deadline: 0}, Req.new(msg: "test"))
+    assert resp.code == :deadline_exceeded
+    assert resp.meta.error_type == "timeout"
+  end
+
+  test "recv timeouts", %{service: service} do
+    Bypass.expect(service, fn _conn ->
+      Bypass.pass(service)
+      :timer.sleep(1_000)
+    end)
+
+    assert {:error, resp} = Client.echo(%{deadline: 1}, Req.new(msg: "test"))
+    assert resp.code == :deadline_exceeded
+    assert resp.meta.error_type == "timeout"
   end
 
   test "service is down", %{service: service} do

@@ -6,18 +6,16 @@ defmodule Twirp.Client.HTTP do
   alias Twirp.Encoder
   alias Twirp.Error
 
-  def start_link(opts) do
-    Finch.start_link(opts)
+  def start_link(mod, opts) do
+    mod.start_link(opts)
   end
 
-  def call(client, ctx, rpc) do
+  def call(mod, client, ctx, rpc) do
     path            = "#{rpc.service_url}/#{rpc.method}"
     content_type    = ctx.content_type
     encoded_payload = Encoder.encode(rpc.req, rpc.input_type, content_type)
-    opts            = [receive_timeout: ctx.deadline]
-    request         = Finch.build(:post, path, ctx.headers, encoded_payload)
 
-    case Finch.request(request, client, opts) do
+    case mod.request(client, ctx, path, encoded_payload) do
       {:error, %{reason: :timeout}} ->
         meta = %{error_type: "timeout"}
         msg = "Deadline to receive data from the service was exceeded"
@@ -31,19 +29,19 @@ defmodule Twirp.Client.HTTP do
         meta = %{error_type: "#{inspect e}"}
         {:error, Error.internal("Unhandled client error", meta)}
 
-      {:ok, %{status: status}=env} when status != 200 ->
-        {:error, build_error(env, rpc)}
+      {:ok, %{status: status}=resp} when status != 200 ->
+        {:error, build_error(resp, rpc)}
 
-      {:ok, %{status: 200}=env} ->
-        handle_success(env, rpc, content_type)
+      {:ok, %{status: 200}=resp} ->
+        handle_success(resp, rpc, content_type)
     end
   end
 
-  defp handle_success(env, rpc, content_type) do
-    resp_content_type = resp_header(env, "content-type")
+  defp handle_success(resp, rpc, content_type) do
+    resp_content_type = resp_header(resp, "content-type")
 
     if resp_content_type && String.starts_with?(resp_content_type, content_type) do
-      Encoder.decode(env.body, rpc.output_type, content_type)
+      Encoder.decode(resp.body, rpc.output_type, content_type)
     else
       {:error, Error.internal(~s|Expected response Content-Type "#{content_type}" but found #{resp_content_type || "nil"}|)}
     end
