@@ -88,5 +88,14 @@ defmodule Twirp.Encoder do
       {k, v}
     end
   end
-  defp to_atom_keys(other), do: other
+
+  defp to_atom_keys(list) when is_list(list) do
+    for item <- list do
+      to_atom_keys(item)
+    end
+  end
+
+  defp to_atom_keys(other) do
+    other
+  end
 end
