@@ -33,7 +33,6 @@ defmodule Twirp.Error do
   @error_codes Map.keys(@error_code_to_http_status)
   @error_code_strings for code <- @error_codes, do: Atom.to_string(code)
 
-  @derive Jason.Encoder
   defexception ~w|code msg meta|a
 
   @type t :: %__MODULE__{
@@ -69,4 +68,16 @@ defmodule Twirp.Error do
 
   @impl true
   def message(%__MODULE__{msg: msg}), do: msg
+
+  defimpl Jason.Encoder do
+    def encode(struct, opts) do
+      map = if struct.meta == %{} do
+        Map.take(struct, [:code, :msg])
+      else
+        Map.take(struct, [:code, :msg, :meta])
+      end
+
+      Jason.Encode.map(map, opts)
+    end
+  end
 end
