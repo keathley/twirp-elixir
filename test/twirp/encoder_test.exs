@@ -33,6 +33,17 @@ defmodule Twirp.EncoderTest do
                  "application/json"
                )
     end
+
+    test "converts string keys to atom keys in nested lists fields" do
+      response =
+        Encoder.decode(
+          %{"requests" => [%{"msg" => "test1"}, %{"msg" => "test2"}]},
+          BatchReq,
+          "application/json"
+        )
+
+      assert {:ok, %BatchReq{requests: [%Req{msg: "test1"}, %Req{msg: "test2"}]}} = response
+    end
   end
 
   describe "encode/3 as json " do
