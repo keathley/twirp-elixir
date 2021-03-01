@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.7.4
+* Fix bug in decoding response bodies
+* Fix decoding nested strings
+* Use the latest finch
+
 ## 0.7.3
 * Gracefully handle all client errors
 
