@@ -177,14 +177,16 @@ defmodule Twirp.Plug do
   end
 
   defp get_input(env, conn) do
-    with {:ok, body, conn} <- get_body(conn, env),
-         {:decoding, {:ok, decoded}} <- {:decoding, Encoder.decode(body, env.input_type, env.content_type)} do
-      {:ok, Map.put(env, :input, decoded), conn}
-    else
-      {:decoding, _} ->
-        msg = "Invalid request body for rpc method: #{env.method_name}"
-        error = bad_route(msg, conn)
-        {:error, env, error}
+    with {:ok, body, conn} <- get_body(conn, env) do
+      case Encoder.decode(body, env.input_type, env.content_type) do
+        {:ok, decoded} ->
+          {:ok, Map.put(env, :input, decoded), conn}
+
+        _error ->
+          msg = "Invalid request body for rpc method: #{env.method_name}"
+          error = bad_route(msg, conn)
+          {:error, env, error}
+      end
     end
   end
 
