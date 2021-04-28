@@ -2,6 +2,7 @@ defmodule Twirp.MixProject do
   use Mix.Project
 
   @version "0.7.4"
+  @source_url "https://github.com/keathley/twirp-elixir"
 
   def project do
     [
@@ -73,22 +74,21 @@ defmodule Twirp.MixProject do
 
   def description do
     """
-    Twirp provides an elixir implementation of the twirp rpc framework.
+    Twirp provides an Elixir implementation of the Twirp RPC framework.
     """
   end
 
   def package do
     [
-      name: "twirp",
-      licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/keathley/twirp"}
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => @source_url}
     ]
   end
 
   def docs do
     [
       source_ref: "v#{@version}",
-      source_url: "https://github.com/keathley/twirp",
+      source_url: @source_url,
       main: "Twirp"
     ]
   end
