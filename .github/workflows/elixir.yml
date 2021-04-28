@@ -2,24 +2,24 @@ name: Elixir CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Setup elixir
-      uses: actions/setup-elixir@v1
+      uses: erlef/setup-elixir@v1
       with:
-        elixir-version: 1.9.4 # Define the elixir version [required]
-        otp-version: 22.2 # Define the OTP version [required]
+        elixir-version: 1.9.4
+        otp-version: 22.2
     - name: Install Dependencies
       run: mix deps.get
+    - name: Check unused dependencies
+      run: mix deps.unlock --check-unused
     - name: Run credo
       run: mix credo --strict
     - name: Run Tests
