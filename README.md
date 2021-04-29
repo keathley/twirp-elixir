@@ -1,6 +1,6 @@
 # Twirp
 
-Twirp provides an elixir implementation of the [twirp rpc framework](https://github.com/twitchtv/twirp) developed by
+Twirp provides an Elixir implementation of the [Twirp RPC framework](https://github.com/twitchtv/twirp) developed by
 Twitch. The protocol defines semantics for routing and serialization of RPCs
 based on protobufs.
 
