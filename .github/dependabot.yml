@@ -1,0 +1,25 @@
+version: 2
+updates:
+- package-ecosystem: mix
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: ex_doc
+    versions:
+    - 0.24.0
+    - 0.24.1
+  - dependency-name: hackney
+    versions:
+    - 1.17.1
+    - 1.17.2
+    - 1.17.3
+  - dependency-name: finch
+    versions:
+    - 0.6.1
+    - 0.6.2
+  - dependency-name: credo
+    versions:
+    - 1.5.4
