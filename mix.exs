@@ -61,7 +61,7 @@ defmodule Twirp.MixProject do
       {:google_protos, "~>0.1"},
       {:finch, "~> 0.6", optional: true},
       {:hackney, "~> 1.17", optional: true},
-      {:telemetry, "~> 0.4"},
+      {:telemetry, "~> 0.4 or ~> 1.0"},
 
       {:bypass, "~> 2.1", only: [:dev, :test]},
       {:credo, "~> 1.1", only: [:dev], runtime: false},
