@@ -85,9 +85,9 @@ defmodule Twirp.ClientTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :unavailable
     assert resp.msg == "unavailable"
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Response is not JSON"
-    assert resp.meta.body == "plain text error"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+    assert resp.meta["not_a_twirp_error_because"] == "Response is not JSON"
+    assert resp.meta["body"] == "plain text error"
   end
 
   test "error has no code", %{service: service} do
@@ -100,8 +100,10 @@ defmodule Twirp.ClientTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :unknown
     assert resp.msg == "unknown"
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Response is JSON but it has no \"code\" attribute"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+
+    assert resp.meta["not_a_twirp_error_because"] ==
+             "Response is JSON but it has no \"code\" attribute"
   end
 
   test "error has incorrect code", %{service: service} do
@@ -114,7 +116,22 @@ defmodule Twirp.ClientTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :internal
     assert resp.msg == "Invalid Twirp error code: keathley"
-    assert resp.meta.invalid_code == "keathley"
+    assert resp.meta["invalid_code"] == "keathley"
+  end
+
+  test "error has meta", %{service: service} do
+    Bypass.expect(service, fn conn ->
+      resp =
+        ~s|{"code": "internal", "msg": "Internal Server Error", "meta": {"cause": "some exception"}}|
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(500, resp)
+    end)
+
+    assert {:error, resp} = Client.echo(Req.new(msg: "test"))
+    assert resp.code == :internal
+    assert resp.msg == "Internal Server Error"
+    assert resp.meta == %{"cause" => "some exception"}
   end
 
   test "redirect errors", %{service: service} do
@@ -128,8 +145,8 @@ defmodule Twirp.ClientTest do
 
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert match?(%Error{code: :internal}, resp)
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Redirects not allowed on Twirp requests"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+    assert resp.meta["not_a_twirp_error_because"] == "Redirects not allowed on Twirp requests"
   end
 
   test "service is down", %{service: service} do
@@ -141,14 +158,20 @@ defmodule Twirp.ClientTest do
 
   @tag :skip
   test "clients are easy to stub" do
-    Twirp.Client.Stub.new(echo: fn %{msg: "foo"} ->
-      Error.unavailable("test")
-    end)
+    Twirp.Client.Stub.new(
+      echo: fn %{msg: "foo"} ->
+        Error.unavailable("test")
+      end
+    )
+
     assert {:error, %Error{code: :unavailable}} = Client.echo(Req.new(msg: "foo"))
 
-    Twirp.Client.Stub.new(echo: fn %{msg: "foo"} ->
-      Resp.new(msg: "foo")
-    end)
+    Twirp.Client.Stub.new(
+      echo: fn %{msg: "foo"} ->
+        Resp.new(msg: "foo")
+      end
+    )
+
     assert {:ok, %Resp{msg: "foo"}} = Client.echo(Req.new(msg: "foo"))
 
     assert_raise Twirp.Client.StubError, ~r/does not define/, fn ->
@@ -157,9 +180,12 @@ defmodule Twirp.ClientTest do
     end
 
     assert_raise Twirp.Client.StubError, ~r/expected to return/, fn ->
-      Twirp.Client.Stub.new(echo: fn _ ->
-        {:ok, Req.new(msg: "test")}
-      end)
+      Twirp.Client.Stub.new(
+        echo: fn _ ->
+          {:ok, Req.new(msg: "test")}
+        end
+      )
+
       Client.echo(Req.new(msg: "foo"))
     end
   end

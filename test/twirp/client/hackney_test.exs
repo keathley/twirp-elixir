@@ -107,9 +107,9 @@ defmodule Twirp.Client.HackneyTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :unavailable
     assert resp.msg == "unavailable"
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Response is not JSON"
-    assert resp.meta.body == "plain text error"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+    assert resp.meta["not_a_twirp_error_because"] == "Response is not JSON"
+    assert resp.meta["body"] == "plain text error"
   end
 
   test "error has no code", %{service: service} do
@@ -122,8 +122,8 @@ defmodule Twirp.Client.HackneyTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :unknown
     assert resp.msg == "unknown"
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Response is JSON but it has no \"code\" attribute"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+    assert resp.meta["not_a_twirp_error_because"] == "Response is JSON but it has no \"code\" attribute"
   end
 
   test "error has incorrect code", %{service: service} do
@@ -136,7 +136,7 @@ defmodule Twirp.Client.HackneyTest do
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert resp.code == :internal
     assert resp.msg == "Invalid Twirp error code: keathley"
-    assert resp.meta.invalid_code == "keathley"
+    assert resp.meta["invalid_code"] == "keathley"
   end
 
   test "redirect errors", %{service: service} do
@@ -150,14 +150,14 @@ defmodule Twirp.Client.HackneyTest do
 
     assert {:error, resp} = Client.echo(Req.new(msg: "test"))
     assert match?(%Error{code: :internal}, resp)
-    assert resp.meta.http_error_from_intermediary == "true"
-    assert resp.meta.not_a_twirp_error_because == "Redirects not allowed on Twirp requests"
+    assert resp.meta["http_error_from_intermediary"] == "true"
+    assert resp.meta["not_a_twirp_error_because"] == "Redirects not allowed on Twirp requests"
   end
 
   test "connect timeouts", %{service: _service} do
     assert {:error, resp} = Client.echo(%{connect_deadline: 0}, Req.new(msg: "test"))
     assert resp.code == :deadline_exceeded
-    assert resp.meta.error_type == "timeout"
+    assert resp.meta["error_type"] == "timeout"
   end
 
   test "recv timeouts", %{service: service} do
@@ -168,7 +168,7 @@ defmodule Twirp.Client.HackneyTest do
 
     assert {:error, resp} = Client.echo(%{deadline: 1}, Req.new(msg: "test"))
     assert resp.code == :deadline_exceeded
-    assert resp.meta.error_type == "timeout"
+    assert resp.meta["error_type"] == "timeout"
   end
 
   test "service is down", %{service: service} do

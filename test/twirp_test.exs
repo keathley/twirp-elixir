@@ -61,7 +61,7 @@ defmodule TwirpTest do
 
     assert {:error, resp} = Client.slow_echo(%{deadline: 5}, req)
     assert resp.code == :deadline_exceeded
-    assert resp.meta.error_type == "timeout"
+    assert resp.meta["error_type"] == "timeout"
   end
 
   test "clients allow interceptors" do
