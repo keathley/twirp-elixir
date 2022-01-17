@@ -206,7 +206,7 @@ end
 
 The plug can also be attached within a Phoenix Router. Example below would be accessible at `/rpc/hat` 
 
-URL: `/rpc/hat/twirp/example.Haberdasher.MakeHat` or `/{prefix?}/twirp/{package}.{service}/{method}`
+URL: `/rpc/hat/twirp/example.Haberdasher/MakeHat` or `/{prefix?}/twirp/{package}.{service}/{method}`
 
 ```elixir
 defmodule ExampleWeb.Router do
