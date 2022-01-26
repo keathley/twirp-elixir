@@ -13,7 +13,7 @@ defmodule Twirp.Protoc.CLI do
 
     ctx =
       %Protobuf.Protoc.Context{}
-      |> Protobuf.Protoc.CLI.parse_params(request.parameter)
+      |> Protobuf.Protoc.CLI.parse_params(request.parameter || "")
       |> Protobuf.Protoc.CLI.find_types(request.proto_file)
 
     files =

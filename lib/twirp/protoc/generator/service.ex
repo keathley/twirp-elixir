@@ -10,7 +10,7 @@ defmodule Twirp.Protoc.Generator.Service do
 
   def generate(ctx, desc) do
     # service can't be nested
-    mod_name = Util.mod_name(ctx, [Util.trans_name(desc.name)])
+    mod_name = Util.mod_name(ctx, [Macro.camelize(desc.name)])
     methods = Enum.map(desc.method, fn m -> generate_service_method(ctx, m) end)
 
     Twirp.Protoc.Template.service(mod_name, "#{ctx.package}", desc.name, methods)
