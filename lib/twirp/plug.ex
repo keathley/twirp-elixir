@@ -290,6 +290,6 @@ defmodule Twirp.Plug do
   end
 
   defp bad_route(msg, conn) do
-    Error.bad_route(msg, twirp_invalid_route: "#{conn.method} #{conn.request_path}")
+    Error.bad_route(msg, %{"twirp_invalid_route" => "#{conn.method} #{conn.request_path}"})
   end
 end

@@ -42,7 +42,7 @@ defmodule Twirp.Error do
   }
 
   for code <- @error_codes do
-    def unquote(code)(msg, meta \\ []) do
+    def unquote(code)(msg, meta \\ %{}) do
       new(unquote(code), msg, meta)
     end
   end
@@ -58,12 +58,12 @@ defmodule Twirp.Error do
     schema(%__MODULE__{
       code: spec(is_atom() and (& &1 in @error_codes)),
       msg: spec(is_binary()),
-      meta: map_of(spec(is_atom()), spec(is_binary())),
+      meta: map_of(spec(is_binary()), spec(is_binary())),
     })
   end
 
-  def new(code, msg, meta \\ []) do
-    conform!(%__MODULE__{code: code, msg: msg, meta: Enum.into(meta, %{})}, s())
+  def new(code, msg, meta \\ %{}) do
+    conform!(%__MODULE__{code: code, msg: msg, meta: meta}, s())
   end
 
   @impl true
