@@ -81,8 +81,7 @@ defmodule Twirp.Plug do
 
   def call(%{path_info: [full_name, method]}=conn, {%{full_name: full_name}=service, handler, hooks}) do
     env = %{}
-    metadata = %{
-    }
+    metadata = %{}
     start = Telemetry.start(:call, metadata)
 
     try do
