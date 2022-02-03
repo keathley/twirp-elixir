@@ -28,7 +28,7 @@ defmodule Twirp.Client.Hackney do
 
     with {:ok, status, headers, ref} <- :hackney.request(:post, path, ctx.headers, payload, options),
          {:ok, body} <- :hackney.body(ref) do
-      {:ok, %{status: status, headers: headers, body: body}}
+      {:ok, %{status: status, headers: format_headers(headers), body: body}}
     else
       {:error, :timeout} ->
         {:error, %{reason: :timeout}}
@@ -41,6 +41,12 @@ defmodule Twirp.Client.Hackney do
 
       error ->
         error
+    end
+  end
+
+  defp format_headers(headers) do
+    for {key, value} <- headers do
+      {String.downcase(to_string(key)), to_string(value)}
     end
   end
 end

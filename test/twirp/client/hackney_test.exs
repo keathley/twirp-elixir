@@ -87,6 +87,23 @@ defmodule Twirp.Client.HackneyTest do
     assert match?(%Error{code: :internal}, resp)
   end
 
+  test "normalize headers", %{service: service} do
+    Bypass.expect(service, fn conn ->
+      assert Plug.Conn.get_req_header(conn, "content-type") == ["application/protobuf"]
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      assert %Req{msg: "test"} == Req.decode(body)
+
+      body = Resp.encode(Resp.new(msg: "test"))
+
+      conn
+      |> Plug.Conn.put_resp_header("Content-Type", "application/protobuf")
+      |> Plug.Conn.resp(200, body)
+    end)
+
+    resp = Client.echo(Req.new(msg: "test"))
+    assert {:ok, Resp.new(msg: "test")} == resp
+  end
+
   test "no headers are returned", %{service: service} do
     Bypass.expect(service, fn conn ->
       conn
