@@ -30,6 +30,8 @@ defmodule Twirp.MixProject do
 
       description: description(),
       package: package(),
+      aliases: aliases(),
+      preferred_cli_env: ["test.generation": :test],
       name: "Twirp",
       source_url: "https://github.com/keathley/twirp",
       docs: docs()
@@ -70,6 +72,34 @@ defmodule Twirp.MixProject do
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
       {:mox, "~> 1.0", only: [:test]},
     ]
+  end
+
+  def aliases do
+    [
+      "test.generation": [
+        "escript.build",
+        "escript.install --force",
+        &generate_protos/1,
+        "test"
+      ]
+    ]
+  end
+
+  defp generate_protos(_) do
+    result = System.cmd("protoc", [
+      "--proto_path=./test/support",
+      "--elixir_out=./test/support",
+      "--twirp_elixir_out=./test/support",
+      "./test/support/service.proto",
+    ])
+
+    case result do
+      {_, 0} ->
+        :ok
+
+      {error, code} ->
+        throw {error, code}
+    end
   end
 
   def description do

@@ -18,11 +18,12 @@ defmodule Twirp.Protoc.Generator do
   end
 
   def generate_content(ctx, desc) do
+    module_prefix = (desc.options && Map.get(desc.options, :elixir_module_prefix)) || (desc.package || "")
     ctx = %{
       ctx
       | package: desc.package || "",
         syntax: syntax(desc.syntax),
-        module_prefix: (desc.options && desc.options.elixir_module_prefix) || (desc.package || "")
+        module_prefix: module_prefix
     }
 
     ctx = %{ctx | dep_type_mapping: get_dep_type_mapping(ctx, desc.dependency, desc.name)}

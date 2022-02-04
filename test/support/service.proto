@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package twirp.test;
 
+option java_multiple_files = true;
+option java_package = "example.apps.services.grpc";
+option java_outer_classname = "ProtocolProto";
+
 message Envelope {
   string msg = 1; // Cannot be empty
   // Child message

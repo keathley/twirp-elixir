@@ -7,12 +7,12 @@ defmodule Twirp.Test.Envelope do
           sub: Twirp.Test.Req.t() | nil
         }
 
-  defstruct [:msg, :sub]
+  defstruct msg: "",
+            sub: nil
 
   field :msg, 1, type: :string
   field :sub, 2, type: Twirp.Test.Req
 end
-
 defmodule Twirp.Test.Req do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -21,11 +21,10 @@ defmodule Twirp.Test.Req do
           msg: String.t()
         }
 
-  defstruct [:msg]
+  defstruct msg: ""
 
   field :msg, 1, type: :string
 end
-
 defmodule Twirp.Test.Resp do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -34,11 +33,10 @@ defmodule Twirp.Test.Resp do
           msg: String.t()
         }
 
-  defstruct [:msg]
+  defstruct msg: ""
 
   field :msg, 1, type: :string
 end
-
 defmodule Twirp.Test.BatchReq do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -47,11 +45,10 @@ defmodule Twirp.Test.BatchReq do
           requests: [Twirp.Test.Req.t()]
         }
 
-  defstruct [:requests]
+  defstruct requests: []
 
   field :requests, 1, repeated: true, type: Twirp.Test.Req
 end
-
 defmodule Twirp.Test.BatchResp do
   @moduledoc false
   use Protobuf, syntax: :proto3
@@ -60,7 +57,7 @@ defmodule Twirp.Test.BatchResp do
           responses: [Twirp.Test.Resp.t()]
         }
 
-  defstruct [:responses]
+  defstruct responses: []
 
   field :responses, 1, repeated: true, type: Twirp.Test.Resp
 end
