@@ -54,7 +54,7 @@ defmodule Twirp.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:plug, "~> 1.8"},
+      {:plug, "~> 1.13"},
       {:norm, "~> 0.9"},
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.9"},
@@ -64,7 +64,7 @@ defmodule Twirp.MixProject do
       {:telemetry, "~> 0.4 or ~> 1.0"},
 
       {:bypass, "~> 2.1", only: [:dev, :test]},
-      {:credo, "~> 1.1", only: [:dev], runtime: false},
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false},
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
