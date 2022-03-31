@@ -73,10 +73,9 @@ defmodule Twirp.PlugTest do
   end
 
   def content_type(conn) do
-    conn.resp_headers
-    |> Enum.find_value(fn {h, v} -> if h == "content-type", do: v, else: false end)
-    |> String.split(";") # drop the charset if there is one
-    |> Enum.at(0)
+   Enum.find_value(conn.resp_headers, fn {h, v} ->
+      if h == "content-type", do: v, else: false
+    end)
   end
 
   def call(req, opts \\ @opts) do
