@@ -279,11 +279,10 @@ defmodule Twirp.Plug do
   end
 
   defp send_error(conn, error) do
-    content_type = Encoder.type(:json)
-    body = Encoder.encode(error, nil, content_type)
+    body = Jason.encode!(error)
 
     conn
-    |> put_resp_content_type(content_type)
+    |> put_resp_content_type("application/json")
     |> send_resp(Error.code_to_status(error.code), body)
     |> halt()
   end
