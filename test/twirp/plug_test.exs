@@ -111,6 +111,16 @@ defmodule Twirp.PlugTest do
     assert conn == req
   end
 
+  test "does not include the __exception__ field" do
+    req = conn(:get, "/twirp/plug.test.Haberdasher/MakeHat")
+    conn = call(req)
+
+    assert conn.status == 404
+    assert content_type(conn) == "application/json"
+    body = Jason.decode!(conn.resp_body)
+    refute Map.has_key?(body, "__exception__")
+  end
+
   test "not a POST" do
     req = conn(:get, "/twirp/plug.test.Haberdasher/MakeHat")
     conn = call(req)
@@ -298,7 +308,7 @@ defmodule Twirp.PlugTest do
     resp = Jason.decode!(conn.resp_body)
     assert resp["code"] == "internal"
     assert resp["msg"] == "Blow this ish up"
-    assert resp["meta"] == %{}
+    refute Map.has_key?(resp, "meta")
   end
 
   describe "before" do
