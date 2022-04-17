@@ -73,10 +73,9 @@ defmodule Twirp.PlugTest do
   end
 
   def content_type(conn) do
-    conn.resp_headers
-    |> Enum.find_value(fn {h, v} -> if h == "content-type", do: v, else: false end)
-    |> String.split(";") # drop the charset if there is one
-    |> Enum.at(0)
+   Enum.find_value(conn.resp_headers, fn {h, v} ->
+      if h == "content-type", do: v, else: false
+    end)
   end
 
   def call(req, opts \\ @opts) do
@@ -110,6 +109,16 @@ defmodule Twirp.PlugTest do
     conn = call(req)
 
     assert conn == req
+  end
+
+  test "does not include the __exception__ field" do
+    req = conn(:get, "/twirp/plug.test.Haberdasher/MakeHat")
+    conn = call(req)
+
+    assert conn.status == 404
+    assert content_type(conn) == "application/json"
+    body = Jason.decode!(conn.resp_body)
+    refute Map.has_key?(body, "__exception__")
   end
 
   test "not a POST" do
@@ -299,7 +308,7 @@ defmodule Twirp.PlugTest do
     resp = Jason.decode!(conn.resp_body)
     assert resp["code"] == "internal"
     assert resp["msg"] == "Blow this ish up"
-    assert resp["meta"] == %{}
+    refute Map.has_key?(resp, "meta")
   end
 
   describe "before" do
