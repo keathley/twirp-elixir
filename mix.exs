@@ -60,7 +60,6 @@ defmodule Twirp.MixProject do
       {:norm, "~> 0.9"},
       {:jason, "~> 1.1"},
       {:protobuf, "~> 0.9"},
-      {:google_protos, "~>0.1"},
       {:finch, "~> 0.6", optional: true},
       {:hackney, "~> 1.17", optional: true},
       {:telemetry, "~> 0.4 or ~> 1.0"},
