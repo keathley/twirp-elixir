@@ -14,7 +14,7 @@ defmodule Twirp.Protoc.CLI do
     ctx =
       %Protobuf.Protoc.Context{}
       |> Protobuf.Protoc.CLI.parse_params(request.parameter || "")
-      |> Protobuf.Protoc.CLI.find_types(request.proto_file)
+      |> Protobuf.Protoc.CLI.find_types(request.proto_file, request.file_to_generate)
 
     files =
       request.proto_file
