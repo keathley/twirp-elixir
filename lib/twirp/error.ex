@@ -38,7 +38,7 @@ defmodule Twirp.Error do
   @type t :: %__MODULE__{
     code: atom(),
     msg: binary(),
-    meta: %{atom() => binary()}
+    meta: %{optional(binary()) => binary()} | nil
   }
 
   for code <- @error_codes do
